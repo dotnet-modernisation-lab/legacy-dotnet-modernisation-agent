@@ -14,7 +14,9 @@ public enum EdgeType
     UsesAuthentication,
     BackedBy,
     UsesIntegration,
-    UsesCrossCutting
+    UsesCrossCutting,
+    ReadsData,
+    WritesData,
 }
 
 public enum MigrationCharacteristic

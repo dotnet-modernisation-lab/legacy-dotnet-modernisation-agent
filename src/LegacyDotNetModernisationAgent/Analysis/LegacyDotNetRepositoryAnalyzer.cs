@@ -83,6 +83,22 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var pipeline = new HttpPipelineAnalyzer().Analyze(sources, configs);
         var integrations = new IntegrationAnalyzer().Analyze(sources);
         var crossCutting = new CrossCuttingAnalyzer().Analyze(sources);
+        var sql = new SqlAnalyzer().Analyze(root, sources);
+        unreadable.AddRange(sql.Gaps);
+
+        // A procedure the code calls but no .sql file defines: its logic is invisible to the assessment.
+        foreach (var contract in dataAccess.Assessment.StoredProcedures)
+        {
+            if (!sql.Assessment.Objects.Any(item => item.Kind == "Procedure"
+                && item.Name.Split('.')[^1].Equals(contract.Name.Split('.')[^1], StringComparison.OrdinalIgnoreCase)))
+            {
+                unreadable.Add(new CoverageGap(
+                    "StoredProcedureDefinitionMissing",
+                    $"Stored procedure {contract.Name} is called but no .sql file in the repository defines it",
+                    contract.Location,
+                    "The tables it touches and the logic it holds are not part of the assessment; obtain the definition from the database."));
+            }
+        }
 
         var technologies = webForms
             .Concat(csla.Findings)
@@ -112,7 +128,8 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             structure.DeclaredTypes,
             structure.Dependencies,
             CoverageAnalyzer.Analyze(projects, discovery.Gaps.Concat(unreadable).ToList()),
-            authentication.Assessment);
+            authentication.Assessment,
+            sql.Assessment);
     }
 
     private static DotNetPlatform ResolvePlatform(IReadOnlyList<DotNetProjectAssessment> projects)

@@ -14,8 +14,8 @@ Evidence strength:
 | 2 | UI technology | Web Forms pages, controls, ViewState, master pages, user controls, third-party control suites | Pages, code-behind, designer merge, `System.Web` use. Third-party control suites only as unanalysed references | Detected / Gap-listed | Human (D-UI-TARGET) |
 | 3 | Business-object framework | CSLA, other frameworks; DataPortal and remoting channel | CSLA source and assembly, DataPortal calls | Detected | Human (D-CSLA-TARGET, D-DATAPORTAL-TARGET) |
 | 4 | Service boundaries | WCF contracts, services, clients, hosts, bindings; ASMX, Remoting | WCF in VB and C#. ASMX, Remoting reported as gaps | Detected / Gap-listed | Human (D-WCF-TARGET) |
-| 5 | Data access | ADO.NET, DAL, stored procedures, EF/NHibernate, transactions | DAL contracts, stored-procedure names, `TransactionScope`/`BeginTransaction`. EF, NHibernate gap-listed | Detected (partial) | Human (D-DATA-CONTRACT) |
-| 6 | Database | Schema, procedure bodies, triggers, jobs, constraints, volumes | None beyond procedure names | None | Human, with DBA |
+| 5 | Data access | ADO.NET, DAL, stored procedures, EF/NHibernate, transactions | DAL contracts, stored-procedure names, inline SQL in code (tables read and written), `TransactionScope`/`BeginTransaction`. EF, NHibernate gap-listed | Detected (partial) | Human (D-DATA-CONTRACT) |
+| 6 | Database | Schema, procedure bodies, triggers, jobs, constraints, volumes | `.sql` files parsed (procedures, views, triggers, tables, features such as dynamic SQL, cursors, linked servers, CLR); missing definitions reported. No live schema, data volumes or jobs | Detected (partial) | Human, with DBA (D-DATABASE-TARGET) |
 | 7 | Data migration and cutover | Moving data, dual-running, rollback, downtime window | None | None | Human |
 | 8 | State and session | InProc/StateServer/SQL session, ViewState, application and cache state | Session use, sessionState config | Detected | Human (D-STATE-MANAGEMENT) |
 | 9 | Authentication and authorization | Forms, Windows, Membership, OWIN, claims, WCF security, role rules | Mechanisms, declared access rules, `UsesAuthentication` edges | Detected | Human (D-AUTH-TARGET) |
@@ -47,4 +47,4 @@ Evidence strength:
 1. Row 1: done (MSBuild evaluation).
 2. Rows 15, 16: done for code; config-side signals remain (see todo).
 3. Rows 13, 14, 17: done for code (see todo for config gaps).
-4. Rows 5, 6: `System.Transactions` and T-SQL parsing of procedure bodies.
+4. Rows 5, 6: done for `.sql` files and inline SQL; live schema and data remain deferred.

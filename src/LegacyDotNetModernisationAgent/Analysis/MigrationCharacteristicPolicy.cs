@@ -132,6 +132,26 @@ public sealed class MigrationCharacteristicPolicy
                         RequiresHumanDecision);
                     break;
 
+                case "DatabaseTable":
+                    collector.Hit(node.Id, "R-DB-TABLE", "Table schema and data must be preserved or migrated; the database platform and how data moves are decisions, not code changes",
+                        node.Detail ?? node.Name, "D-DATABASE-TARGET", "Confirm the database platform and how schema and data are carried over",
+                        RequiresBehaviourPreservation, RequiresHumanDecision);
+                    break;
+
+                case "DatabaseCode":
+                    collector.Hit(node.Id, "R-DB-CODE", "Database code (procedures, functions, views, triggers) holds business behaviour that must be preserved wherever the database lives",
+                        node.Detail ?? node.Name, "D-DATABASE-TARGET", "Confirm the database platform and how schema and data are carried over",
+                        RequiresBehaviourPreservation, RequiresHumanDecision);
+
+                    if (node.Detail?.Contains("features:", StringComparison.Ordinal) == true)
+                    {
+                        collector.Hit(node.Id, "R-DB-SERVER-SPECIFIC", "SQL Server-specific features (dynamic SQL, cursors, linked servers, CLR, xp_cmdshell) limit where this code can run and are risk areas to review",
+                            node.Detail[node.Detail.IndexOf("features:", StringComparison.Ordinal)..], "D-DATABASE-TARGET", "Confirm the database platform and how schema and data are carried over",
+                            RequiresHumanDecision);
+                    }
+
+                    break;
+
                 case "CrossCutting":
                     CrossCuttingRule(collector, node);
                     break;
@@ -204,6 +224,15 @@ public sealed class MigrationCharacteristicPolicy
                 collector.Hit(node.Id, "R-SYSTEMWEB-IN-LOGIC", "Non-UI code depends on System.Web (HttpContext); it cannot move until decoupled",
                     string.Join("; ", edgesFrom[node.Id].Where(e => e.To == "fw:System.Web").Select(e => e.Evidence)),
                     null, null, RequiresFrameworkReplacement);
+            }
+
+            var inlineData = edgesFrom[node.Id].Where(edge => edge.Basis == "InlineSql").ToList();
+
+            if (inlineData.Count > 0)
+            {
+                collector.Hit(node.Id, "R-INLINE-SQL", "SQL is embedded in code, so this class owns data access outside any stored-procedure contract; its queries are part of the data contract to preserve",
+                    string.Join("; ", inlineData.Select(edge => edge.Evidence).Distinct(StringComparer.Ordinal).Take(4)), "D-DATABASE-TARGET", "Confirm the database platform and how schema and data are carried over",
+                    RequiresBehaviourPreservation, RequiresHumanDecision);
             }
 
             var usedAuthentication = edgesFrom[node.Id].Where(edge => edge.Type == EdgeType.UsesAuthentication).Select(edge => edge.To[5..]).Distinct().Order(StringComparer.Ordinal).ToList();

@@ -125,6 +125,8 @@ public sealed partial class ArchitecturalGraphBuilder
             };
         }
 
+        AddDatabaseNodes(assessment.Database, nodes);
+
         foreach (var file in assessment.DataAccess.Fixtures.SelectMany(f => f.FixtureFiles).Distinct(StringComparer.Ordinal))
         {
             nodes[$"fixture:{file}"] = new NodeBuilder($"fixture:{file}", Path.GetFileName(file), "Fixture", "Persistence")
@@ -403,6 +405,8 @@ public sealed partial class ArchitecturalGraphBuilder
             }
         }
 
+        AddDatabaseEdges(assessment, nodes, edges, NodeOfDeclared);
+
         foreach (var finding in findings.Where(f => f.Technology == CrossCuttingAnalyzer.CrossCutting && f.Subject is not null))
         {
             var from = NodeOfDeclared(finding.Subject, finding.Location);
@@ -537,6 +541,143 @@ public sealed partial class ArchitecturalGraphBuilder
         return (type.Kind, "Unclassified");
     }
 
+    private static string TableId(string name) => $"db:table:{name.ToLowerInvariant()}";
+
+    private static string CodeId(string name) => $"db:code:{name.ToLowerInvariant()}";
+
+    private static void AddDatabaseNodes(DatabaseAssessment database, Dictionary<string, NodeBuilder> nodes)
+    {
+        string Features(IEnumerable<string> features) =>
+            features.Any() ? "; features: " + string.Join(", ", features.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) : "";
+
+        void Table(string name)
+        {
+            if (!nodes.ContainsKey(TableId(name)))
+            {
+                nodes[TableId(name)] = new NodeBuilder(TableId(name), name, "DatabaseTable", "Persistence") { Detail = "table referenced; definition not in repository" };
+            }
+        }
+
+        void Code(string name)
+        {
+            if (!nodes.ContainsKey(CodeId(name)))
+            {
+                nodes[CodeId(name)] = new NodeBuilder(CodeId(name), name, "DatabaseCode", "Persistence") { Detail = "referenced; definition not in repository" };
+            }
+        }
+
+        foreach (var item in database.Objects)
+        {
+            switch (item.Kind)
+            {
+                case "Table":
+                    nodes[TableId(item.Name)] = new NodeBuilder(TableId(item.Name), item.Name, "DatabaseTable", "Persistence")
+                    {
+                        Location = item.Location,
+                        Line = item.Line,
+                        Detail = $"table, {item.Parameters.Count} column(s)"
+                    };
+                    break;
+                case "Statement":
+                    {
+                        var id = CodeId("script:" + item.Location);
+
+                        if (!nodes.TryGetValue(id, out var script))
+                        {
+                            nodes[id] = script = new NodeBuilder(id, Path.GetFileName(item.Location), "DatabaseCode", "Persistence") { Location = item.Location, Line = item.Line, Detail = "script of loose statements" };
+                        }
+
+                        script.Detail += Features(item.Features);
+                        break;
+                    }
+                default:
+                    nodes[CodeId(item.Name)] = new NodeBuilder(CodeId(item.Name), item.Name, "DatabaseCode", "Persistence")
+                    {
+                        Location = item.Location,
+                        Line = item.Line,
+                        Detail = $"{item.Kind.ToLowerInvariant()}, {item.Parameters.Count} parameter(s){Features(item.Features)}"
+                    };
+                    break;
+            }
+        }
+
+        foreach (var name in database.Objects.SelectMany(o => o.Reads.Concat(o.Writes)).Concat(database.InlineStatements.SelectMany(i => i.Reads.Concat(i.Writes))).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            Table(name);
+        }
+
+        foreach (var name in database.Objects.SelectMany(o => o.Calls).Concat(database.InlineStatements.SelectMany(i => i.Calls)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            Code(name);
+        }
+    }
+
+    private static void AddDatabaseEdges(
+        LegacyDotNetProjectAssessment assessment,
+        Dictionary<string, NodeBuilder> nodes,
+        List<GraphEdge> edges,
+        Func<string?, string?, string?> nodeOfDeclared)
+    {
+        var database = assessment.Database;
+
+        foreach (var item in database.Objects.Where(o => o.Kind != "Table"))
+        {
+            var from = item.Kind == "Statement" ? CodeId("script:" + item.Location) : CodeId(item.Name);
+
+            foreach (var table in item.Reads)
+            {
+                edges.Add(new GraphEdge(from, TableId(table), EdgeType.ReadsData, "SqlParse", $"reads {table}", item.Location, item.Line));
+            }
+
+            foreach (var table in item.Writes)
+            {
+                edges.Add(new GraphEdge(from, TableId(table), EdgeType.WritesData, "SqlParse", $"writes {table}", item.Location, item.Line));
+            }
+
+            foreach (var call in item.Calls)
+            {
+                edges.Add(new GraphEdge(from, CodeId(call), EdgeType.Invokes, "SqlParse", $"executes {call}", item.Location, item.Line));
+            }
+        }
+
+        foreach (var statement in database.InlineStatements)
+        {
+            var from = nodeOfDeclared(statement.Type, statement.Location);
+
+            if (from is null)
+            {
+                continue;
+            }
+
+            foreach (var table in statement.Reads)
+            {
+                edges.Add(new GraphEdge(from, TableId(table), EdgeType.ReadsData, "InlineSql", $"{statement.Statement} reads {table}", statement.Location, statement.Line));
+            }
+
+            foreach (var table in statement.Writes)
+            {
+                edges.Add(new GraphEdge(from, TableId(table), EdgeType.WritesData, "InlineSql", $"{statement.Statement} writes {table}", statement.Location, statement.Line));
+            }
+
+            foreach (var call in statement.Calls)
+            {
+                edges.Add(new GraphEdge(from, CodeId(call), EdgeType.Invokes, "InlineSql", $"{statement.Statement} executes {call}", statement.Location, statement.Line));
+            }
+        }
+
+        // A stored-procedure contract in code is backed by the procedure of the same name defined in a .sql file.
+        foreach (var contract in assessment.DataAccess.StoredProcedures)
+        {
+            var definition = database.Objects.FirstOrDefault(o => o.Kind == "Procedure"
+                && o.Name.Split('.')[^1].Equals(contract.Name.Split('.')[^1], StringComparison.OrdinalIgnoreCase));
+
+            if (definition is not null && nodes.ContainsKey($"sp:{contract.Name}"))
+            {
+                edges.Add(new GraphEdge($"sp:{contract.Name}", CodeId(definition.Name), EdgeType.BackedBy, "NameMatch", $"procedure {definition.Name} is defined in {definition.Location}", definition.Location, definition.Line));
+            }
+        }
+    }
+
     /// <summary>One edge per (from, to, type) with merged evidence; a specific edge replaces a plain Uses between the same nodes.</summary>
     private static List<GraphEdge> Consolidate(List<GraphEdge> edges)
     {
@@ -591,7 +732,7 @@ public sealed partial class ArchitecturalGraphBuilder
             list.Add(implementation.To);
         }
 
-        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "AuthenticationMechanism", "Integration", "CrossCutting", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
+        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "AuthenticationMechanism", "Integration", "CrossCutting", "DatabaseTable", "DatabaseCode", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
         var kinds = nodes.ToDictionary(n => n.Id, n => n.Kind, StringComparer.Ordinal);
 
         return nodes

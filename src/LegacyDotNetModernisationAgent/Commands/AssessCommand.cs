@@ -54,6 +54,10 @@ public sealed class AssessCommand
             }
         }
 
+        var database = assessment.Database;
+
+        Console.WriteLine($"  database: {database.SqlFiles.Count} SQL file(s), {database.Objects.Count(o => o.Kind != "Statement")} object(s), {database.InlineStatements.Count} inline SQL statement(s) in code");
+
         Console.WriteLine($"  coverage: {assessment.Coverage.Gaps.Count} gap(s) in what was analysed");
 
         foreach (var gap in assessment.Coverage.Gaps)

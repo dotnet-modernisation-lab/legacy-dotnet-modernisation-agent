@@ -184,3 +184,36 @@ public sealed record AuthenticationAssessment(
     IReadOnlyList<AuthMechanism> Mechanisms,
     IReadOnlyList<AccessRule> AccessRules,
     IReadOnlyList<ReviewHint> ReviewHints);
+
+// ---- Database facts (T-SQL files and inline SQL) --------------------------------------------
+
+/// <summary>
+/// An object defined in a .sql file (procedure, function, view, trigger, table) or a script of loose statements.
+/// Reads/Writes are table names; Calls are procedures executed; Features are SQL Server specifics a migration must know about.
+/// </summary>
+public sealed record SqlObjectInfo(
+    string Kind,
+    string Name,
+    string Location,
+    int Line,
+    IReadOnlyList<string> Parameters,
+    IReadOnlyList<string> Reads,
+    IReadOnlyList<string> Writes,
+    IReadOnlyList<string> Calls,
+    IReadOnlyList<string> Features);
+
+/// <summary>A literal in code that parses as T-SQL. Only the verb and the objects it touches are recorded, never the text.</summary>
+public sealed record InlineSqlInfo(
+    string Statement,
+    string? Type,
+    string Location,
+    int Line,
+    IReadOnlyList<string> Reads,
+    IReadOnlyList<string> Writes,
+    IReadOnlyList<string> Calls,
+    IReadOnlyList<string> Features);
+
+public sealed record DatabaseAssessment(
+    IReadOnlyList<string> SqlFiles,
+    IReadOnlyList<SqlObjectInfo> Objects,
+    IReadOnlyList<InlineSqlInfo> InlineStatements);
