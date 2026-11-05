@@ -15,7 +15,8 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 | D. Architectural graph, layer boundaries, impact, migration characteristics | done |
 | E. Behaviour contracts and probe (`behave`, baseline, `--verify`) | done |
 | Authentication and authorization detection, access rules, decision gate | done |
-| F. Strategy Agent, JSON analysis input, Word strategy | next |
+| F. Strategy: evidence bundle, validator, replay and deterministic strategy, Markdown and Word report | done (no model yet) |
+| F. Model-backed Strategy Agent | next (needs a model decision) |
 
 ## Use
 
@@ -38,6 +39,24 @@ access control, and a stopped-WCF-host boundary test), and records the observati
 `Artifacts/behaviour-baseline.json`. `--verify` re-runs the probe and reports any difference from the saved baseline.
 The solution must already be built. The probe stops only the processes it started and never builds or edits the repository.
 Nothing in the legacy solution changes and no test project is needed.
+
+```text
+dotnet run --project src/LegacyDotNetModernisationAgent -- strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|file:<strategy.json>]
+```
+
+Builds one bounded, sorted, ID-addressable evidence bundle (`legacy-migration-input.json`, with its SHA-256) from the facts, graph and
+policy, asks a strategy model for the narrative, **validates it against the bundle**, and writes `legacy-migration-strategy.json`,
+`legacy-strategy-validation.json`, `legacy-strategy-prompt.txt`, `migration-strategy.md` and `migration-strategy.docx`. Exit code 0 when accepted, 3 when
+violations were found (the report is still written, with the violations).
+
+- The strategy has no field for a classification, disposition or gate outcome: the model cannot change the policy, only describe and recommend.
+- Every claim cites IDs from the bundle. A claim citing nothing is shown as Unverified; one citing an ID that is not in the bundle is Rejected (an invented fact).
+- Violations reported, all of them, not just the first: `V-HASH`, `V-UNKNOWN-ID`, `V-GATE-MISSING`, `V-GATE-DUPLICATE`, `V-GATE-UNKNOWN`, `V-GATE-DECIDED`,
+  `V-PHASE-GATE`, `V-PHASE-DUPLICATE`, `V-PHASE-UNASSESSED`, `V-QUESTION-MISSING`, `V-QUESTION-SHAPE`, `V-PROVENANCE`, `V-EMPTY`.
+- Every aspect the tool cannot detect (`AspectCatalogue`, the machine-readable form of `docs/migration-aspects.md`) and every coverage gap must be an open question.
+- `deterministic` (default) needs no model: it lists every gate and open question and orders phases by layer. `file:` replays a saved result, which is how
+  the validator is proved: `scripts/plant_strategy_violations.py` plants one violation per variant and each must be rejected with its code.
+- The `.docx` is a zip with timestamps, so its bytes differ between runs; compare `word/document.xml`, which is identical.
 
 ## How the analysers work
 

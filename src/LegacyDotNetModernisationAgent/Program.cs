@@ -5,6 +5,8 @@ const string Usage = """
       assess <repositoryPath> [artifactsDirectory]            facts, graph and migration analysis
       behave <repositoryPath> [artifactsDirectory] [--verify] record (or re-check) the behaviour baseline;
                                                               needs the solution built and IIS Express installed
+      strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|file:<strategy.json>]
+                                                              evidence bundle, strategy, validation, Markdown and Word report
     """;
 
 using var cancellationTokenSource = new CancellationTokenSource();
@@ -19,7 +21,7 @@ var verify = args.Contains("--verify", StringComparer.OrdinalIgnoreCase);
 var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
 var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
 
-if (positional.Length < 2 || command is not ("assess" or "behave"))
+if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy"))
 {
     Console.Error.WriteLine(Usage);
 
@@ -35,6 +37,13 @@ try
         await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
 
         return 0;
+    }
+
+    if (command == "strategy")
+    {
+        var modelOption = args.FirstOrDefault(argument => argument.StartsWith("--model=", StringComparison.OrdinalIgnoreCase));
+
+        return await new StrategyCommand().ExecuteAsync(positional[1], artifacts, modelOption is null ? "deterministic" : modelOption["--model=".Length..], cancellationTokenSource.Token);
     }
 
     return await new BehaviourCommand().ExecuteAsync(positional[1], artifacts, verify, cancellationTokenSource.Token);

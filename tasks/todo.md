@@ -7,7 +7,9 @@ Principle: the tool will be run against legacy code bases we have not seen. **An
 - [x] C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures)
 - [x] D. Architectural graph, layer boundaries, impact, migration characteristics
 - [x] E. Behaviour contracts, HTTP probe, verifiable baseline (proved on the sample)
-- [ ] F. Strategy Agent, `LegacyMigrationAnalysisInput`, fact validation on return, JSON, Word strategy
+- [x] F1. Strategy without a model: `LegacyMigrationAnalysisInput` (bounded, sorted, SHA-256), result schema with no classification fields, validator (violations list, claim status Verified/Unverified/Rejected), `IStrategyModel` seam with deterministic-baseline and replay implementations, prompt, JSON/Markdown/Word. Proved: baseline accepted on the sample and a SQL fixture and identical across runs (`word/document.xml` compared, not the zip); `scripts/plant_strategy_violations.py` variants each rejected with the expected code (it also caught a report-writer crash on duplicate gates, fixed)
+- [ ] F2. Model-backed Strategy Agent: implement `IStrategyModel` for the chosen model (needs the model decision: reuse the Spring prototype's Azure/Foundry setup or another), read-only, structured output; run the planted-violation proof against real output; record model id and version in the result
+- [ ] F3. Strategy gaps: phases are by layer only (no dependency-aware ordering or wave sizing); component list is capped at 150 with counts for the rest; behaviour contracts are not yet part of the bundle; no per-claim confidence beyond gate notes; text checks for "decided" claims are phrase-based
 
 ## Now: analysis that works on any code base
 - [x] Discover solutions and projects without assuming a `.sln` (`.sln`, `.slnx`, or bare project files); flag projects not in any solution
