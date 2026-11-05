@@ -132,6 +132,10 @@ public sealed class MigrationCharacteristicPolicy
                         RequiresHumanDecision);
                     break;
 
+                case "Integration":
+                    IntegrationRule(collector, node);
+                    break;
+
                 case "AuthenticationMechanism":
                     AuthenticationRule(collector, node);
                     break;
@@ -284,6 +288,43 @@ public sealed class MigrationCharacteristicPolicy
                 .ToList(),
             portable.Order(StringComparer.Ordinal).ToList(),
             coupled.Order(StringComparer.Ordinal).ToList());
+    }
+
+    private static void IntegrationRule(Collector collector, GraphNode node)
+    {
+        var detail = node.Detail ?? node.Name;
+
+        switch (node.Name)
+        {
+            case IntegrationAnalyzer.ScheduledWork:
+                collector.Hit(node.Id, "R-INTEGRATION-SCHEDULED", "Background, timer or Windows-service work depends on how the application is hosted; where it runs after migration is a decision",
+                    detail, "D-INTEGRATION-HOSTING", "Decide where background and scheduled work runs", RequiresArchitecturalReplacement, RequiresHumanDecision);
+                break;
+            case IntegrationAnalyzer.Messaging:
+                collector.Hit(node.Id, "R-INTEGRATION-MESSAGING", "MSMQ is Windows-only and System.Messaging is not in modern .NET; the messaging technology is a decision",
+                    detail, "D-INTEGRATION-MESSAGING", "Decide the messaging technology", RequiresArchitecturalReplacement, RequiresHumanDecision);
+                break;
+            case IntegrationAnalyzer.ComInterop:
+                collector.Hit(node.Id, "R-INTEGRATION-NATIVE", "COM and native calls tie the code to Windows and to installed components; availability and bitness must be established",
+                    detail, "D-INTEGRATION-NATIVE", "Decide how COM and native dependencies are provided or replaced", RequiresFrameworkReplacement, RequiresHumanDecision);
+                break;
+            case IntegrationAnalyzer.FileSystem:
+                collector.Hit(node.Id, "R-INTEGRATION-FILES", "File access assumes the host file system (paths, shares, permissions); the target storage must be decided",
+                    detail, "D-INTEGRATION-FILES", "Decide where files live after migration", RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+            case IntegrationAnalyzer.Transactions:
+                collector.Hit(node.Id, "R-INTEGRATION-TRANSACTIONS", "Transaction boundaries (and any distributed transaction) must keep their semantics",
+                    detail, "D-TRANSACTION-BOUNDARIES", "Agree the transaction boundaries to preserve", RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+            case IntegrationAnalyzer.Email or IntegrationAnalyzer.ExternalHttp:
+                collector.Hit(node.Id, "R-INTEGRATION-OUTBOUND", "Outbound email or HTTP calls exist in modern .NET; endpoints, credentials and network access still need confirming in the target environment",
+                    detail, null, null, RequiresBehaviourPreservation);
+                break;
+            default:
+                collector.Hit(node.Id, "R-INTEGRATION-EXTERNAL", "Calls to other systems (FTP, child processes) need their endpoints, credentials and network access confirmed in the target environment",
+                    detail, "D-INTEGRATION-EXTERNAL", "Confirm external integrations and how they are reached", RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+        }
     }
 
     private const string AuthGateTitle = "Decide the authentication and authorization target";

@@ -21,7 +21,6 @@ public static class CoverageAnalyzer
         ("System.Web.Http", "ASP.NET Web API"),
         ("Microsoft.AspNet.SignalR", "SignalR"),
         ("Microsoft.Practices", "Enterprise Library / Unity"),
-        ("System.Messaging", "MSMQ"),
         ("System.Workflow", "Windows Workflow Foundation"),
         ("System.Windows.Forms", "Windows Forms"),
         ("PresentationFramework", "WPF"),

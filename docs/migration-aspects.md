@@ -14,7 +14,7 @@ Evidence strength:
 | 2 | UI technology | Web Forms pages, controls, ViewState, master pages, user controls, third-party control suites | Pages, code-behind, designer merge, `System.Web` use. Third-party control suites only as unanalysed references | Detected / Gap-listed | Human (D-UI-TARGET) |
 | 3 | Business-object framework | CSLA, other frameworks; DataPortal and remoting channel | CSLA source and assembly, DataPortal calls | Detected | Human (D-CSLA-TARGET, D-DATAPORTAL-TARGET) |
 | 4 | Service boundaries | WCF contracts, services, clients, hosts, bindings; ASMX, Remoting | WCF in VB and C#. ASMX, Remoting reported as gaps | Detected / Gap-listed | Human (D-WCF-TARGET) |
-| 5 | Data access | ADO.NET, DAL, stored procedures, EF/NHibernate, transactions | DAL contracts and stored-procedure names. EF, NHibernate gap-listed. No `System.Transactions` detection | Detected (partial) | Human (D-DATA-CONTRACT) |
+| 5 | Data access | ADO.NET, DAL, stored procedures, EF/NHibernate, transactions | DAL contracts, stored-procedure names, `TransactionScope`/`BeginTransaction`. EF, NHibernate gap-listed | Detected (partial) | Human (D-DATA-CONTRACT) |
 | 6 | Database | Schema, procedure bodies, triggers, jobs, constraints, volumes | None beyond procedure names | None | Human, with DBA |
 | 7 | Data migration and cutover | Moving data, dual-running, rollback, downtime window | None | None | Human |
 | 8 | State and session | InProc/StateServer/SQL session, ViewState, application and cache state | Session use, sessionState config | Detected | Human (D-STATE-MANAGEMENT) |
@@ -24,8 +24,8 @@ Evidence strength:
 | 12 | Security posture | Weak crypto, cookie flags, transport security, rule order | Config hints only; no code-level review | Hint | Security reviewer |
 | 13 | Logging, monitoring, health | log4net, NLog, EventLog, Trace, APM, health endpoints | None | None | Human |
 | 14 | Error handling | Custom errors, global handlers, error pages | None | None | Human |
-| 15 | Background and scheduled work | Windows services, scheduled tasks, timers, threads, Hangfire/Quartz | None | None | Human |
-| 16 | Integrations | File shares, email/SMTP, FTP, MSMQ, COM interop, external HTTP services | None | None | Human |
+| 15 | Background and scheduled work | Windows services, scheduled tasks, timers, threads, Hangfire/Quartz | Services, timers, threads, thread pool, Quartz/Hangfire (code only; Windows scheduled tasks live outside the repo) | Detected (partial) | Human (D-INTEGRATION-HOSTING) |
+| 16 | Integrations | File shares, email/SMTP, FTP, MSMQ, COM interop, external HTTP services | All detected in code by name; config-side signals not read | Detected (partial) | Human (D-INTEGRATION-*) |
 | 17 | Caching and performance | `HttpRuntime.Cache`, output caching, in-process state, performance baselines | None | None | Human |
 | 18 | Concurrency and threading | `HttpContext` use off request threads, static state, locks | `HttpContext.Current` use in logic layers only | Detected (partial) | Human |
 | 19 | Localisation and time | Resources, cultures, time zones, date formats | None | None | Human |
@@ -45,6 +45,6 @@ Evidence strength:
 
 ## Suggested order for closing gaps
 1. Row 1: done (MSBuild evaluation).
-2. Rows 15, 16: scheduled work and integrations hide the most migration risk and are detectable from source and config.
+2. Rows 15, 16: done for code; config-side signals remain (see todo).
 3. Rows 13, 14, 17: logging, error handling and caching signals.
 4. Rows 5, 6: `System.Transactions` and T-SQL parsing of procedure bodies.
