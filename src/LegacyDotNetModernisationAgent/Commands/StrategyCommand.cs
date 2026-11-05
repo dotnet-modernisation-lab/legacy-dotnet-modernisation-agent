@@ -6,7 +6,7 @@ namespace LegacyDotNetModernisationAgent.Commands;
 
 /// <summary>
 /// Builds the evidence bundle, asks a strategy model for the narrative, validates it against the bundle and writes the
-/// report. The model is a seam: "deterministic" (default, no model) or "file:&lt;path&gt;" (replay a saved result).
+/// report. The model is a seam: "deterministic" (default, no model), "foundry" (Azure AI Foundry) or "file:&lt;path&gt;" (replay a saved result).
 /// Exit code 0 when the strategy is accepted, 3 when validation found violations (the report is still written).
 /// </summary>
 public sealed class StrategyCommand
@@ -26,8 +26,9 @@ public sealed class StrategyCommand
         IStrategyModel model = modelSpec switch
         {
             "deterministic" => new DeterministicStrategyModel(),
+            "foundry" => new FoundryStrategyModel(FoundryProjectSettings.FromEnvironment()),
             _ when modelSpec.StartsWith("file:", StringComparison.OrdinalIgnoreCase) => new ReplayStrategyModel(modelSpec["file:".Length..]),
-            _ => throw new InvalidOperationException($"Unknown model '{modelSpec}'. Use 'deterministic' or 'file:<path to a strategy JSON>'.")
+            _ => throw new InvalidOperationException($"Unknown model '{modelSpec}'. Use 'deterministic', 'foundry' or 'file:<path to a strategy JSON>'.")
         };
 
         var strategy = await model.ProduceAsync(input, hash, prompt, cancellationToken);

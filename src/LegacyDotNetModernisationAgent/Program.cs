@@ -5,7 +5,7 @@ const string Usage = """
       assess <repositoryPath> [artifactsDirectory]            facts, graph and migration analysis
       behave <repositoryPath> [artifactsDirectory] [--verify] record (or re-check) the behaviour baseline;
                                                               needs the solution built and IIS Express installed
-      strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|file:<strategy.json>]
+      strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|foundry|file:<strategy.json>]
                                                               evidence bundle, strategy, validation, Markdown and Word report
     """;
 

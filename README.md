@@ -54,6 +54,7 @@ violations were found (the report is still written, with the violations).
 - Violations reported, all of them, not just the first: `V-HASH`, `V-UNKNOWN-ID`, `V-GATE-MISSING`, `V-GATE-DUPLICATE`, `V-GATE-UNKNOWN`, `V-GATE-DECIDED`,
   `V-PHASE-GATE`, `V-PHASE-DUPLICATE`, `V-PHASE-UNASSESSED`, `V-QUESTION-MISSING`, `V-QUESTION-SHAPE`, `V-PROVENANCE`, `V-EMPTY`.
 - Every aspect the tool cannot detect (`AspectCatalogue`, the machine-readable form of `docs/migration-aspects.md`) and every coverage gap must be an open question.
+- `foundry` runs the Strategy Agent on Azure AI Foundry (read-only, no tools). Set `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_MODEL` and `FOUNDRY_AUTH_MODE` (`Development` = DefaultAzureCredential/`az login`, `AzureCli`, `ManagedIdentity`, optional `FOUNDRY_MANAGED_IDENTITY_CLIENT_ID`), the same variables as the Spring prototype. No keys are used. Only the evidence bundle is sent (names, paths, rule and gate IDs, coverage gaps; no source code and no secret values). The tool records the deployment and the bundle hash itself.
 - `deterministic` (default) needs no model: it lists every gate and open question and orders phases by layer. `file:` replays a saved result, which is how
   the validator is proved: `scripts/plant_strategy_violations.py` plants one violation per variant and each must be rejected with its code.
 - The `.docx` is a zip with timestamps, so its bytes differ between runs; compare `word/document.xml`, which is identical.
