@@ -105,7 +105,7 @@ public sealed partial class WcfAnalyzer
                 clients.Add(new WcfClientUsage(contract, binding, addressKey, className, source.Path, creation.Line));
                 findings.Add(new LegacyTechnologyFinding(
                     Wcf,
-                    $"ChannelFactory(Of {contract}) binding={binding ?? "?"} address=appSettings[{addressKey ?? "?"}]",
+                    $"ChannelFactory{(creation.TypeArgumentDisplay.Length > 0 ? creation.TypeArgumentDisplay : "(Of ?)")} binding={binding ?? "?"} address=appSettings[{addressKey ?? "?"}]",
                     source.Path,
                     creation.Line,
                     className));

@@ -36,12 +36,18 @@ public static class VbFactExtractor
             .ToList();
 
         var creations = root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
-            .Select(creation => new CreationFact(
-                SimpleName(creation.Type),
-                FirstTypeArgument(creation.Type),
-                NearestClass(creation),
-                EnclosingMethod(creation),
-                Line(creation)))
+            .Select(creation =>
+            {
+                var argument = FirstTypeArgument(creation.Type);
+
+                return new CreationFact(
+                    SimpleName(creation.Type),
+                    argument,
+                    argument is null ? "" : $"(Of {argument})",
+                    NearestClass(creation),
+                    EnclosingMethod(creation),
+                    Line(creation));
+            })
             .ToList();
 
         var literals = root.DescendantNodes().OfType<LiteralExpressionSyntax>()

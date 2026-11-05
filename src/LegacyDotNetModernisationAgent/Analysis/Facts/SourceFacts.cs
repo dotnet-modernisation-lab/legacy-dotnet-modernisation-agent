@@ -65,6 +65,7 @@ public sealed record MemberAccessFact(
 public sealed record CreationFact(
     string TypeName,
     string? TypeArgument,
+    string TypeArgumentDisplay,
     string? Type,
     string? Method,
     int Line);

@@ -40,14 +40,14 @@ Nothing in the legacy solution changes and no test project is needed.
 
 ## How the analysers work
 
-- VB source is parsed with Roslyn's Visual Basic **syntax trees** (nothing is compiled or run), so comments and line continuations cannot cause false matches.
+- VB.NET and C# source are parsed with Roslyn **syntax trees** (nothing is compiled or run, and no references are needed) into a language-neutral fact model; every analyser reads only that model.
 - Binaries (`Csla.dll`) are read with `System.Reflection.Metadata`: name, version, CLR metadata version, public key token, referenced assemblies and decoded public/protected method signatures for the CSLA types the source uses. The binary is never loaded.
 - Every finding carries technology, evidence, file and line. Stored-procedure links say whether they are a `DirectReference` or only a `NamingConvention` match.
 - Secret-looking `appSettings` values are redacted in all output.
 
 ## Known limits
 
-- Only VB source is analysed for technologies. C# files are inventoried but not scanned (the sample has one trivial C# file).
+- VB.NET and C# source are analysed (syntax only, no compilation) through one language-neutral fact model, so each technology rule is written once. Other .NET languages (for example F#) are reported as coverage gaps.
 - Type references are matched by name and resolved through project references; a name that stays ambiguous is skipped, never guessed.
 - `Portable` is never assigned: without a compile and a behaviour check, code with no detected coupling is reported as `RequiresRecompile` / `PotentiallyPortable`.
 - Edges with basis `NamingConvention` or `Convention` are weaker evidence than `Declared`, `DirectReference` or `SourceDeclaration`, and are labelled as such.

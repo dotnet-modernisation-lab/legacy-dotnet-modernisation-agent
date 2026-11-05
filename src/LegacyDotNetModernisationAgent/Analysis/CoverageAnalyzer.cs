@@ -37,7 +37,7 @@ public static class CoverageAnalyzer
 
         foreach (var project in projects)
         {
-            if (project.Language != ProjectLanguage.VisualBasic && project.Files.SourceFiles.Count > 0)
+            if (project.Language is not (ProjectLanguage.VisualBasic or ProjectLanguage.CSharp) && project.Files.SourceFiles.Count > 0)
             {
                 gaps.Add(new CoverageGap(
                     "SourceNotScanned",

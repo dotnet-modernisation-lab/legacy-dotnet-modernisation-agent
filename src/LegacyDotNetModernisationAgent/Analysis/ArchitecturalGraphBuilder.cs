@@ -16,7 +16,8 @@ public sealed partial class ArchitecturalGraphBuilder
         ["System.Web", "System.Web.Services", "System.Runtime.Remoting", "System.EnterpriseServices",
          "System.Windows.Forms", "System.Design", "System.Transactions"];
 
-    [GeneratedRegex(@"^DataPortal\.(?<op>\w+)\(Of (?<type>[\w.]+)\)$")]
+    // DataPortal.Fetch(Of T) in VB.NET, DataPortal.Fetch<T> in C#
+    [GeneratedRegex(@"^DataPortal\.(?<op>\w+)(?:\(Of (?<type>[\w.]+)\)|<(?<type>[\w.]+)>)$")]
     private static partial Regex DataPortalCall();
 
     [GeneratedRegex(@"^Inherits (?:[\w.]*\.)?(?<name>\w+)")]
@@ -207,11 +208,26 @@ public sealed partial class ArchitecturalGraphBuilder
         }
 
         // ---- Edges from detected facts ----------------------------------------------------
-        string? NodeOfDeclared(string? name, string? location) =>
-            assessment.DeclaredTypes
+        string? NodeOfDeclared(string? name, string? location)
+        {
+            var exact = assessment.DeclaredTypes
                 .Where(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase) && t.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
                 .Select(t => nodeOfType.GetValueOrDefault(t.Id))
                 .FirstOrDefault(id => id is not null);
+
+            if (exact is not null || location is null)
+            {
+                return exact;
+            }
+
+            // The evidence may sit in another part of a partial type (a code-behind and its designer, or two partial files).
+            var project = assessment.Projects.FirstOrDefault(p => p.Files.SourceFiles.Contains(location, StringComparer.OrdinalIgnoreCase))?.Name;
+
+            return assessment.DeclaredTypes
+                .Where(t => t.Project == project && t.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                .Select(t => nodeOfType.GetValueOrDefault(t.Id))
+                .FirstOrDefault(id => id is not null);
+        }
 
         string? ResolveByName(string name, string? fromProject, params string[] kinds)
         {
