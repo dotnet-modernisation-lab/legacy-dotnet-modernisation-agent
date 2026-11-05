@@ -337,6 +337,18 @@ public sealed class MigrationCharacteristicPolicy
                 collector.Hit(node.Id, "R-XCUT-ERRORS", "Application-level error handling hooks into the System.Web pipeline; what users and operators see on failure must be preserved",
                     detail, "D-ERROR-HANDLING", "Decide how errors are handled, reported and shown", RequiresFrameworkReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);
                 break;
+            case CrossCuttingAnalyzer.Localisation:
+                collector.Hit(node.Id, "R-XCUT-LOCALISATION", "Culture and resource handling exists in modern .NET but defaults differ (culture data, resource lookup); outputs per culture must be preserved",
+                    detail, null, null, RequiresBehaviourPreservation);
+                break;
+            case CrossCuttingAnalyzer.TimeHandling:
+                collector.Hit(node.Id, "R-XCUT-TIME", "Server-local time and Windows time-zone IDs behave differently on other hosts and platforms; time semantics must be preserved",
+                    detail, null, null, RequiresBehaviourPreservation);
+                break;
+            case CrossCuttingAnalyzer.Reporting:
+                collector.Hit(node.Id, "R-XCUT-REPORTING", "Report and document generation (Crystal, SSRS, PDF, Excel) often depends on Windows-only or legacy components; the reporting approach is a decision",
+                    detail, "D-REPORTING", "Decide how reports and generated documents are produced", RequiresLibraryUpgrade, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
             default:
                 collector.Hit(node.Id, "R-XCUT-CACHING", "In-process cache or application state is lost or duplicated when the app runs on more than one instance or restarts; a shared-state decision is needed",
                     detail, "D-CACHING", "Decide how cached and shared in-process state is handled", RequiresArchitecturalReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);

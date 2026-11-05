@@ -82,7 +82,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var authentication = new AuthenticationAnalyzer().Analyze(sources, configs, projects);
         var pipeline = new HttpPipelineAnalyzer().Analyze(sources, configs);
         var integrations = new IntegrationAnalyzer().Analyze(sources);
-        var crossCutting = new CrossCuttingAnalyzer().Analyze(sources);
+        var crossCutting = new CrossCuttingAnalyzer().Analyze(root, sources);
         var sql = new SqlAnalyzer().Analyze(root, sources);
         unreadable.AddRange(sql.Gaps);
 

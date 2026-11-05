@@ -28,8 +28,8 @@ Evidence strength:
 | 16 | Integrations | File shares, email/SMTP, FTP, MSMQ, COM interop, external HTTP services | All detected in code by name; config-side signals not read | Detected (partial) | Human (D-INTEGRATION-*) |
 | 17 | Caching and performance | `HttpRuntime.Cache`, output caching, in-process state, performance baselines | ASP.NET cache, MemoryCache, Application state; output caching and performance baselines not covered | Detected (partial) | Human (D-CACHING) |
 | 18 | Concurrency and threading | `HttpContext` use off request threads, static state, locks | `HttpContext.Current` use in logic layers only | Detected (partial) | Human |
-| 19 | Localisation and time | Resources, cultures, time zones, date formats | None | None | Human |
-| 20 | Reporting and documents | Crystal Reports, SSRS, PDF/Excel generation | Gap-listed only where signalled | Gap-listed | Human |
+| 19 | Localisation and time | Resources, cultures, time zones, date formats | Culture and resource use, culture `.resx` files, `DateTime.Now`, time-zone calls; config not read | Detected (partial) | Rule only (R-XCUT-LOCALISATION, R-XCUT-TIME) |
+| 20 | Reporting and documents | Crystal Reports, SSRS, PDF/Excel generation | Report files and libraries detected; data sources and parameters not analysed | Detected (partial) | Human (D-REPORTING) |
 | 21 | Third-party and binary dependencies | Unsupported libraries, licences, 32-bit or COM components, no source | Binary references, missing binaries, framework-assembly dependencies | Detected (partial) | Human |
 | 22 | Build, CI and packaging | Build tooling, restore, signing, versioning | Builds are decided by MSBuild outside the tool | None (by design) | Human |
 | 23 | Deployment and hosting | IIS settings, app pools, certificates, Windows-only assumptions, environments | IIS config sections in `web.config` only | Detected (partial) | Human |
