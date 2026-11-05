@@ -11,7 +11,8 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 | Milestone | State |
 |---|---|
 | B. Repository inventory (solution, old-style projects, packages.config, references, framework/language) | done |
-| C. Technology analysers (Web Forms, CSLA, assembly, WCF, DAL) | next |
+| C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures) | done |
+| D. Architectural graph, migration characteristics | next |
 
 ## Use
 
@@ -20,3 +21,15 @@ dotnet run --project src/LegacyDotNetModernisationAgent -- assess <repositoryPat
 ```
 
 Writes `Artifacts/legacy-project-assessment.json`.
+
+## How the analysers work
+
+- VB source is parsed with Roslyn's Visual Basic **syntax trees** (nothing is compiled or run), so comments and line continuations cannot cause false matches.
+- Binaries (`Csla.dll`) are read with `System.Reflection.Metadata`: name, version, CLR metadata version, public key token, referenced assemblies and decoded public/protected method signatures for the CSLA types the source uses. The binary is never loaded.
+- Every finding carries technology, evidence, file and line. Stored-procedure links say whether they are a `DirectReference` or only a `NamingConvention` match.
+- Secret-looking `appSettings` values are redacted in all output.
+
+## Known limits
+
+- Only VB source is analysed for technologies. C# files are inventoried but not scanned (the sample has one trivial C# file).
+- Technology findings are facts, not policy: migration characteristics are assigned in Milestone D.

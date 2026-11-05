@@ -29,13 +29,37 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             .OrderBy(project => project.Path, StringComparer.Ordinal)
             .ToList();
 
+        var sources = VbSourceLoader.Load(root, projects);
+        var configs = WebConfigReader.ReadAll(root, projects);
+
+        var webForms = new WebFormsAnalyzer().Analyze(root, projects, sources, configs);
+        var csla = new CslaAnalyzer().Analyze(sources, configs);
+        var wcf = new WcfAnalyzer().Analyze(root, projects, sources, configs);
+        var dataAccess = new LegacyDataAccessAnalyzer().Analyze(root, projects, sources, configs);
+        var configurationReads = new ConfigurationReadAnalyzer().Analyze(sources);
+        var assemblies = new LegacyAssemblyAnalyzer().Analyze(root, projects, csla.UsedTypeNames);
+
+        var technologies = webForms
+            .Concat(csla.Findings)
+            .Concat(wcf.Findings)
+            .Concat(dataAccess.Findings)
+            .Concat(configurationReads)
+            .OrderBy(finding => finding.Technology, StringComparer.Ordinal)
+            .ThenBy(finding => finding.Location, StringComparer.Ordinal)
+            .ThenBy(finding => finding.Line ?? 0)
+            .ThenBy(finding => finding.Evidence, StringComparer.Ordinal)
+            .ToList();
+
         return new LegacyDotNetProjectAssessment(
             new DirectoryInfo(root).Name,
             ReadCommitSha(root),
             ResolvePlatform(projects),
             projects,
-            [],
-            BuildDependencies(projects));
+            technologies,
+            BuildDependencies(projects),
+            assemblies,
+            wcf.Assessment,
+            dataAccess.Assessment);
     }
 
     private static DotNetPlatform ResolvePlatform(IReadOnlyList<DotNetProjectAssessment> projects)

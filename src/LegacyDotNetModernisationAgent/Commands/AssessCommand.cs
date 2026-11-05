@@ -32,6 +32,16 @@ public sealed class AssessCommand
             Console.WriteLine($"  {project.Name,-24} {project.Language,-12} {project.TargetFramework,-7} {project.Kind}");
         }
 
+        foreach (var group in assessment.Technologies.GroupBy(finding => finding.Technology).OrderBy(group => group.Key, StringComparer.Ordinal))
+        {
+            Console.WriteLine($"  [{group.Key}] {group.Count()} findings");
+        }
+
+        foreach (var binary in assessment.Assemblies)
+        {
+            Console.WriteLine($"  binary {binary.Name} {binary.Version} CLR {binary.ClrMetadataVersion} token {binary.PublicKeyToken ?? "none"} ({binary.PublicTypeCount} public types)");
+        }
+
         Console.WriteLine($"Wrote {outputPath}");
     }
 }

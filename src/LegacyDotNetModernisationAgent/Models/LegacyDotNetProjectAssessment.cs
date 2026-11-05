@@ -75,7 +75,9 @@ public sealed record DotNetProjectAssessment(
 public sealed record LegacyTechnologyFinding(
     string Technology,
     string Evidence,
-    string Location);
+    string Location,
+    int? Line = null,
+    string? Subject = null);
 
 public sealed record ComponentDependency(
     string From,
@@ -88,4 +90,7 @@ public sealed record LegacyDotNetProjectAssessment(
     DotNetPlatform Platform,
     IReadOnlyList<DotNetProjectAssessment> Projects,
     IReadOnlyList<LegacyTechnologyFinding> Technologies,
-    IReadOnlyList<ComponentDependency> Dependencies);
+    IReadOnlyList<ComponentDependency> Dependencies,
+    IReadOnlyList<LegacyAssemblyEvidence> Assemblies,
+    WcfAssessment Wcf,
+    DataAccessAssessment DataAccess);
