@@ -38,8 +38,6 @@ public sealed class DeterministicStrategyModel : IStrategyModel
 
     public string Name => ModelName;
 
-    private static readonly string[] LayerOrder = ["Persistence", "DataAccess", "BusinessObjects", "ServiceBoundary", "Infrastructure", "Hosting", "Presentation", "Unclassified"];
-
     public Task<LegacyMigrationStrategy> ProduceAsync(LegacyMigrationAnalysisInput input, string inputSha256, string prompt, CancellationToken cancellationToken)
     {
         var gateNotes = input.Gates
@@ -52,24 +50,27 @@ public sealed class DeterministicStrategyModel : IStrategyModel
             .ToList();
 
         var phases = new List<ProposedPhase>();
-        var number = 1;
 
-        foreach (var layer in input.Components.GroupBy(component => component.Layer).OrderBy(group => LayerRank(group.Key)).ThenBy(group => group.Key, StringComparer.Ordinal))
+        foreach (var area in input.WorkAreas.OrderBy(area => area.Order))
         {
-            var members = layer.OrderBy(component => component.NodeId, StringComparer.Ordinal).ToList();
-            var prerequisites = members.SelectMany(component => component.GateIds).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            var members = input.Components.Where(component => component.Layer == area.Name).OrderBy(component => component.NodeId, StringComparer.Ordinal).ToList();
+            var prerequisites = members.SelectMany(component => component.GateIds).Concat(area.BlockedByGates).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
             if (members.Any(component => component.Disposition?.StartsWith("Unassessed", StringComparison.Ordinal) == true) && !prerequisites.Contains("D-UNASSESSED-TECH"))
             {
                 prerequisites.Add("D-UNASSESSED-TECH");
             }
 
+            prerequisites = prerequisites.Where(gate => input.Gates.Any(g => g.Id == gate)).ToList();
+
             phases.Add(new ProposedPhase(
-                number++,
-                $"{layer.Key} layer",
-                $"{members.Count} component(s) in the {layer.Key} layer. Dependencies point from the user interface towards data, so lower layers are listed first; each phase waits on the decision gates that affect its components.",
+                area.Order,
+                $"{area.Name} layer (size {area.Size}, confidence {area.Confidence})",
+                $"{area.ComponentCount} component(s), {area.Points} points ({string.Join(", ", area.Drivers)}). " +
+                (area.DependsOn.Count == 0 ? "Nothing else in the estate depends on it being later, so it can start first. " : $"It uses {string.Join(", ", area.DependsOn)}, which come earlier. ") +
+                (area.Note ?? "") + " It waits on the decision gates that affect its components.",
                 members.Select(component => component.NodeId).ToList(),
-                prerequisites.Where(gate => input.Gates.Any(g => g.Id == gate)).ToList(),
+                prerequisites,
                 [.. prerequisites, .. members.Take(5).Select(component => component.NodeId)]));
         }
 
@@ -111,12 +112,5 @@ public sealed class DeterministicStrategyModel : IStrategyModel
             risks,
             [],
             questions));
-    }
-
-    private static int LayerRank(string layer)
-    {
-        var index = Array.IndexOf(LayerOrder, layer);
-
-        return index < 0 ? LayerOrder.Length : index;
     }
 }

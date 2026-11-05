@@ -35,6 +35,23 @@ public sealed record InputAspect(
 
 public sealed record InputOmission(string Kind, int Count);
 
+/// <summary>
+/// A group of components migrated together (one architectural layer), with a relative size and a dependency-aware order.
+/// Size is a relative effort indicator from a fixed rubric, not an estimate in days. Confidence is Low when part of the area
+/// is unassessed or waits on decisions, because the size then rests on unknowns.
+/// </summary>
+public sealed record InputWorkArea(
+    int Order,
+    string Name,
+    int ComponentCount,
+    int Points,
+    string Size,
+    string Confidence,
+    IReadOnlyList<string> Drivers,
+    IReadOnlyList<string> BlockedByGates,
+    IReadOnlyList<string> DependsOn,
+    string? Note);
+
 public sealed record LegacyMigrationAnalysisInput(
     string SchemaVersion,
     string Repository,
@@ -46,6 +63,8 @@ public sealed record LegacyMigrationAnalysisInput(
     IReadOnlyList<InputGate> Gates,
     IReadOnlyList<InputComponent> Components,
     IReadOnlyList<InputOmission> OmittedComponents,
+    IReadOnlyList<InputWorkArea> WorkAreas,
+    IReadOnlyList<string> SizingRubric,
     IReadOnlyList<InputGap> CoverageGaps,
     IReadOnlyList<InputAspect> Aspects,
     IReadOnlyList<string> PotentiallyPortableAreas,

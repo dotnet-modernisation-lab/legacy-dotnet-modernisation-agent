@@ -96,6 +96,8 @@ public static class LegacyMigrationAnalysisInputBuilder
             gates,
             components,
             omitted,
+            WorkAreaSizer.Build(graph, analysis, gatesOfNode),
+            WorkAreaSizer.Rubric,
             gaps,
             aspects,
             analysis.PotentiallyPortableAreas.Order(StringComparer.Ordinal).ToList(),

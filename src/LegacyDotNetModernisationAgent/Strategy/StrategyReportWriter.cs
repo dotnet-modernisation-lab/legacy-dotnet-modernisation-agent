@@ -178,6 +178,30 @@ public static class StrategyReportWriter
             }
         }
 
+        H1("Work areas: size and order");
+        Text("Relative T-shirt sizes and a dependency-aware order, calculated from the deterministic classification (not estimated by a model). A size is an effort indicator, not a number of days. Confidence is Low where the size rests on unassessed technology or undecided gates.");
+        Header("Order", "Area", "Size", "Points", "Confidence", "Components", "Waits on decisions", "Drivers");
+
+        foreach (var area in input.WorkAreas.OrderBy(area => area.Order))
+        {
+            Row(area.Order.ToString(), area.Name, area.Size, area.Points.ToString(), area.Confidence, area.ComponentCount.ToString(), string.Join(", ", area.BlockedByGates), string.Join("; ", area.Drivers));
+        }
+
+        var lowConfidence = input.WorkAreas.Count(area => area.Confidence == "Low");
+        Text($"Areas with Low confidence: {lowConfidence} of {input.WorkAreas.Count}. Sizes are per area and are not added up into one number for the estate.");
+
+        foreach (var area in input.WorkAreas.Where(area => area.Note is not null))
+        {
+            Bullet($"{area.Name}: {area.Note}");
+        }
+
+        H2("How sizes are calculated");
+
+        foreach (var line in input.SizingRubric)
+        {
+            Bullet(line);
+        }
+
         H1("Proposed phases");
 
         foreach (var phase in strategy.Phases.OrderBy(phase => phase.Number))

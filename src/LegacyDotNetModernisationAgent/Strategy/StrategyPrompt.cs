@@ -24,7 +24,9 @@ public static class StrategyPrompt
         7. You may use general knowledge of the named technologies to identify risks for the target platform, but present them as
            risks to verify, not observed facts, and cite the evidence that makes them relevant.
         8. Do not propose shell, git or database commands.
-        9. Return only the requested JSON, echoing inputSha256 exactly and naming yourself in model.
+        9. Sizes and order come from the evidence (workAreas, sizingRubric): they are deterministic, relative effort indicators, not estimates in days.
+            Follow that order unless the evidence justifies a change, and then cite it. Never restate a different size; where confidence is Low, say the size rests on unknowns.
+        10. Return only the requested JSON, echoing inputSha256 exactly and naming yourself in model.
 
         Return JSON with: inputSha256, model, summary, summaryEvidence[], gateNotes[{gateId, recommendation, options[{name, advantages, drawbacks}],
         confidence (High|Medium|Low), evidence[]}], phases[{number, title, rationale, nodeIds[], prerequisiteGates[], evidence[]}],
