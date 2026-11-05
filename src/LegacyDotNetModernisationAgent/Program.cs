@@ -1,5 +1,12 @@
 using LegacyDotNetModernisationAgent.Commands;
 
+const string Usage = """
+    Usage:
+      assess <repositoryPath> [artifactsDirectory]            facts, graph and migration analysis
+      behave <repositoryPath> [artifactsDirectory] [--verify] record (or re-check) the behaviour baseline;
+                                                              needs the solution built and IIS Express installed
+    """;
+
 using var cancellationTokenSource = new CancellationTokenSource();
 
 Console.CancelKeyPress += (_, eventArgs) =>
@@ -8,35 +15,39 @@ Console.CancelKeyPress += (_, eventArgs) =>
     cancellationTokenSource.Cancel();
 };
 
-var command = args.FirstOrDefault()?.Trim().ToLowerInvariant();
+var verify = args.Contains("--verify", StringComparer.OrdinalIgnoreCase);
+var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
+var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
+
+if (positional.Length < 2 || command is not ("assess" or "behave"))
+{
+    Console.Error.WriteLine(Usage);
+
+    return 2;
+}
+
+var artifacts = positional.Length > 2 ? positional[2] : "Artifacts";
 
 try
 {
-    switch (command)
+    if (command == "assess")
     {
-        case "assess":
-            {
-                if (args.Length < 2)
-                {
-                    Console.Error.WriteLine("Usage: assess <repositoryPath> [artifactsDirectory]");
-                    return 2;
-                }
+        await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
 
-                await new AssessCommand().ExecuteAsync(
-                    args[1],
-                    args.Length > 2 ? args[2] : "Artifacts",
-                    cancellationTokenSource.Token);
-
-                return 0;
-            }
-
-        default:
-            Console.Error.WriteLine("Usage: assess <repositoryPath> [artifactsDirectory]");
-            return 2;
+        return 0;
     }
+
+    return await new BehaviourCommand().ExecuteAsync(positional[1], artifacts, verify, cancellationTokenSource.Token);
 }
 catch (OperationCanceledException)
 {
     Console.Error.WriteLine("Cancelled.");
+
     return 130;
+}
+catch (Exception exception) when (exception is InvalidOperationException or FileNotFoundException or TimeoutException)
+{
+    Console.Error.WriteLine($"Error: {exception.Message}");
+
+    return 1;
 }

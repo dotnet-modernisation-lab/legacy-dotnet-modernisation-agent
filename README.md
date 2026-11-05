@@ -13,7 +13,8 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 | B. Repository inventory (solution, old-style projects, packages.config, references, framework/language) | done |
 | C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures) | done |
 | D. Architectural graph, layer boundaries, impact, migration characteristics | done |
-| E. Behaviour contracts and probe | next |
+| E. Behaviour contracts and probe (`behave`, baseline, `--verify`) | done |
+| F. Strategy Agent, JSON analysis input, Word strategy | next |
 
 ## Use
 
@@ -26,6 +27,16 @@ Writes, deterministically (byte-identical across runs):
 - `Artifacts/legacy-project-assessment.json`: facts (projects, findings, binary evidence, WCF, data access, type structure)
 - `Artifacts/legacy-dependency-graph.json`: nodes, typed edges with basis and evidence, layer boundaries, impact sets, page-to-stored-procedure paths
 - `Artifacts/migration-analysis.json`: migration characteristics per component (rule ID, reason, evidence), human decision gates, potentially portable areas
+
+```text
+dotnet run --project src/LegacyDotNetModernisationAgent -- behave <repositoryPath> [artifactsDirectory] [--verify]
+```
+
+`behave` starts the built legacy app under IIS Express, drives it like a browser (sign-in, customers, postbacks, Session,
+access control, and a stopped-WCF-host boundary test), and records the observations as named contracts in
+`Artifacts/behaviour-baseline.json`. `--verify` re-runs the probe and reports any difference from the saved baseline.
+The solution must already be built. The probe stops only the processes it started and never builds or edits the repository.
+Nothing in the legacy solution changes and no test project is needed.
 
 ## How the analysers work
 
