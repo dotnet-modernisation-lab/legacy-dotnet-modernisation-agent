@@ -82,6 +82,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var authentication = new AuthenticationAnalyzer().Analyze(sources, configs, projects);
         var pipeline = new HttpPipelineAnalyzer().Analyze(sources, configs);
         var integrations = new IntegrationAnalyzer().Analyze(sources);
+        var crossCutting = new CrossCuttingAnalyzer().Analyze(sources);
 
         var technologies = webForms
             .Concat(csla.Findings)
@@ -91,6 +92,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             .Concat(authentication.Findings)
             .Concat(pipeline)
             .Concat(integrations)
+            .Concat(crossCutting)
             .OrderBy(finding => finding.Technology, StringComparer.Ordinal)
             .ThenBy(finding => finding.Location, StringComparer.Ordinal)
             .ThenBy(finding => finding.Line ?? 0)

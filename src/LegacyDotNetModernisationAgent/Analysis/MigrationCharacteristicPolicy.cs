@@ -132,6 +132,10 @@ public sealed class MigrationCharacteristicPolicy
                         RequiresHumanDecision);
                     break;
 
+                case "CrossCutting":
+                    CrossCuttingRule(collector, node);
+                    break;
+
                 case "Integration":
                     IntegrationRule(collector, node);
                     break;
@@ -288,6 +292,27 @@ public sealed class MigrationCharacteristicPolicy
                 .ToList(),
             portable.Order(StringComparer.Ordinal).ToList(),
             coupled.Order(StringComparer.Ordinal).ToList());
+    }
+
+    private static void CrossCuttingRule(Collector collector, GraphNode node)
+    {
+        var detail = node.Detail ?? node.Name;
+
+        switch (node.Name)
+        {
+            case CrossCuttingAnalyzer.Logging:
+                collector.Hit(node.Id, "R-XCUT-LOGGING", "Logging and monitoring must keep reaching the same places (files, event log, APM); the target logging approach is a decision",
+                    detail, "D-OBSERVABILITY", "Decide the logging and monitoring approach", RequiresLibraryUpgrade, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+            case CrossCuttingAnalyzer.ErrorHandling:
+                collector.Hit(node.Id, "R-XCUT-ERRORS", "Application-level error handling hooks into the System.Web pipeline; what users and operators see on failure must be preserved",
+                    detail, "D-ERROR-HANDLING", "Decide how errors are handled, reported and shown", RequiresFrameworkReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+            default:
+                collector.Hit(node.Id, "R-XCUT-CACHING", "In-process cache or application state is lost or duplicated when the app runs on more than one instance or restarts; a shared-state decision is needed",
+                    detail, "D-CACHING", "Decide how cached and shared in-process state is handled", RequiresArchitecturalReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+        }
     }
 
     private static void IntegrationRule(Collector collector, GraphNode node)

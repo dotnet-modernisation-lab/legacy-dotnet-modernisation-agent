@@ -189,6 +189,16 @@ public sealed partial class ArchitecturalGraphBuilder
             };
         }
 
+        foreach (var group in findings.Where(f => f.Technology == CrossCuttingAnalyzer.CrossCutting).GroupBy(f => f.Evidence.Split(':')[0]))
+        {
+            var crossCuttingId = $"xcut:{group.Key}";
+
+            nodes[crossCuttingId] = new NodeBuilder(crossCuttingId, group.Key, "CrossCutting", "Infrastructure")
+            {
+                Detail = $"{group.Count()} use{(group.Count() == 1 ? "" : "s")} in {group.Select(f => f.Location).Distinct(StringComparer.Ordinal).Count()} file(s)"
+            };
+        }
+
         foreach (var binary in assessment.Assemblies)
         {
             var assemblyId = $"assembly:{Path.GetFileName(binary.Path)}";
@@ -393,6 +403,16 @@ public sealed partial class ArchitecturalGraphBuilder
             }
         }
 
+        foreach (var finding in findings.Where(f => f.Technology == CrossCuttingAnalyzer.CrossCutting && f.Subject is not null))
+        {
+            var from = NodeOfDeclared(finding.Subject, finding.Location);
+
+            if (from is not null)
+            {
+                edges.Add(new GraphEdge(from, $"xcut:{finding.Evidence.Split(':')[0]}", EdgeType.UsesCrossCutting, "SourceUsage", finding.Evidence, finding.Location, finding.Line));
+            }
+        }
+
         foreach (var finding in findings.Where(f => f.Technology == WebFormsAnalyzer.SystemWeb && f.Subject is not null))
         {
             var from = NodeOfDeclared(finding.Subject, finding.Location);
@@ -571,7 +591,7 @@ public sealed partial class ArchitecturalGraphBuilder
             list.Add(implementation.To);
         }
 
-        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "AuthenticationMechanism", "Integration", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
+        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "AuthenticationMechanism", "Integration", "CrossCutting", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
         var kinds = nodes.ToDictionary(n => n.Id, n => n.Kind, StringComparer.Ordinal);
 
         return nodes

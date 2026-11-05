@@ -13,7 +13,8 @@ public enum EdgeType
     UsesSession,
     UsesAuthentication,
     BackedBy,
-    UsesIntegration
+    UsesIntegration,
+    UsesCrossCutting
 }
 
 public enum MigrationCharacteristic

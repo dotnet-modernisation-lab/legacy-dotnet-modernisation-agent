@@ -22,11 +22,11 @@ Evidence strength:
 | 10 | HTTP pipeline | Modules, handlers, message handlers, `Global.asax` events | Modules, handlers, auth hooks | Detected | Human (D-HTTP-PIPELINE) |
 | 11 | Configuration and secrets | appSettings, connection strings, machine-specific values, secret storage | Settings read in code, credential-like keys by name only | Detected / Hint | Human |
 | 12 | Security posture | Weak crypto, cookie flags, transport security, rule order | Config hints only; no code-level review | Hint | Security reviewer |
-| 13 | Logging, monitoring, health | log4net, NLog, EventLog, Trace, APM, health endpoints | None | None | Human |
-| 14 | Error handling | Custom errors, global handlers, error pages | None | None | Human |
+| 13 | Logging, monitoring, health | log4net, NLog, EventLog, Trace, APM, health endpoints | Framework imports, Trace/EventLog calls, `GetLogger`; config not read | Detected (partial) | Human (D-OBSERVABILITY) |
+| 14 | Error handling | Custom errors, global handlers, error pages | `Application_Error`, `Page_Error`, `GetLastError`, ELMAH; `customErrors` not read | Detected (partial) | Human (D-ERROR-HANDLING) |
 | 15 | Background and scheduled work | Windows services, scheduled tasks, timers, threads, Hangfire/Quartz | Services, timers, threads, thread pool, Quartz/Hangfire (code only; Windows scheduled tasks live outside the repo) | Detected (partial) | Human (D-INTEGRATION-HOSTING) |
 | 16 | Integrations | File shares, email/SMTP, FTP, MSMQ, COM interop, external HTTP services | All detected in code by name; config-side signals not read | Detected (partial) | Human (D-INTEGRATION-*) |
-| 17 | Caching and performance | `HttpRuntime.Cache`, output caching, in-process state, performance baselines | None | None | Human |
+| 17 | Caching and performance | `HttpRuntime.Cache`, output caching, in-process state, performance baselines | ASP.NET cache, MemoryCache, Application state; output caching and performance baselines not covered | Detected (partial) | Human (D-CACHING) |
 | 18 | Concurrency and threading | `HttpContext` use off request threads, static state, locks | `HttpContext.Current` use in logic layers only | Detected (partial) | Human |
 | 19 | Localisation and time | Resources, cultures, time zones, date formats | None | None | Human |
 | 20 | Reporting and documents | Crystal Reports, SSRS, PDF/Excel generation | Gap-listed only where signalled | Gap-listed | Human |
@@ -46,5 +46,5 @@ Evidence strength:
 ## Suggested order for closing gaps
 1. Row 1: done (MSBuild evaluation).
 2. Rows 15, 16: done for code; config-side signals remain (see todo).
-3. Rows 13, 14, 17: logging, error handling and caching signals.
+3. Rows 13, 14, 17: done for code (see todo for config gaps).
 4. Rows 5, 6: `System.Transactions` and T-SQL parsing of procedure bodies.
