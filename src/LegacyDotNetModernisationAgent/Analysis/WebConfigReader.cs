@@ -158,6 +158,15 @@ public static partial class WebConfigReader
                         break;
                     }
 
+                // Registered pipeline extensions: only entries that name a type (built-in modules are skipped).
+                case "add" when element.Attribute("type") is not null && parent is "httpModules" or "modules":
+                    items.Add(new AuthConfigItem("HttpModule", Attrs(element, "name", "type"), ScopeOf(element)));
+                    break;
+
+                case "add" when element.Attribute("type") is not null && parent is "httpHandlers" or "handlers":
+                    items.Add(new AuthConfigItem("HttpHandler", Attrs(element, "name", "path", "verb", "type"), ScopeOf(element)));
+                    break;
+
                 case "serviceCredentials" or "clientCredentials" or "serviceAuthorization" or "serviceSecurityAudit":
                     items.Add(new AuthConfigItem("WcfCredentialsBehavior", $"{name} {Attrs(element, "principalPermissionMode", "roleProviderName", "serviceAuthorizationManagerType")}".Trim(), ScopeOf(element)));
                     break;

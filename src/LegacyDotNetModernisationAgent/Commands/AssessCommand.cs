@@ -44,6 +44,16 @@ public sealed class AssessCommand
             Console.WriteLine($"    {mechanism.Kind} ({mechanism.EvidenceCount}): {mechanism.Summary}");
         }
 
+        if (assessment.Authentication.ReviewHints.Count > 0)
+        {
+            Console.WriteLine($"  security review hints ({assessment.Authentication.ReviewHints.Count}; hints only, not findings about enforcement):");
+
+            foreach (var hint in assessment.Authentication.ReviewHints)
+            {
+                Console.WriteLine($"    [{hint.Id}] {hint.Observation} ({hint.Location})");
+            }
+        }
+
         Console.WriteLine($"  coverage: {assessment.Coverage.Gaps.Count} gap(s) in what was analysed");
 
         foreach (var gap in assessment.Coverage.Gaps)

@@ -53,6 +53,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var assemblies = new LegacyAssemblyAnalyzer().Analyze(root, projects, csla.UsedTypeNames);
         var structure = new TypeDependencyAnalyzer().Analyze(projects, sources);
         var authentication = new AuthenticationAnalyzer().Analyze(sources, configs, projects);
+        var pipeline = new HttpPipelineAnalyzer().Analyze(sources, configs);
 
         var technologies = webForms
             .Concat(csla.Findings)
@@ -60,6 +61,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             .Concat(dataAccess.Findings)
             .Concat(configurationReads)
             .Concat(authentication.Findings)
+            .Concat(pipeline)
             .OrderBy(finding => finding.Technology, StringComparer.Ordinal)
             .ThenBy(finding => finding.Location, StringComparer.Ordinal)
             .ThenBy(finding => finding.Line ?? 0)

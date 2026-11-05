@@ -136,6 +136,12 @@ public sealed class MigrationCharacteristicPolicy
                     AuthenticationRule(collector, node);
                     break;
 
+                case "HttpModule" or "HttpHandler" or "MessageHandler":
+                    collector.Hit(node.Id, "R-HTTP-PIPELINE", "A custom HTTP module, handler or message handler is a Web Forms-era pipeline extension; it needs its own decision (middleware or endpoint handler)",
+                        node.Detail ?? node.Location ?? node.Name, "D-HTTP-PIPELINE", "Decide how custom HTTP modules and handlers move to the target pipeline",
+                        RequiresArchitecturalReplacement, RequiresHumanDecision);
+                    break;
+
                 case "StoredProcedureContract":
                     collector.Hit(node.Id, "R-SP-CONTRACT", "Stored-procedure contract is preserved unless deliberately redesigned",
                         node.Detail ?? node.Name, "D-DATA-CONTRACT", "Agree whether any data-contract change is acceptable",
@@ -326,6 +332,11 @@ public sealed class MigrationCharacteristicPolicy
             case AuthenticationAnalyzer.MachineKey:
                 collector.Hit(node.Id, "R-AUTH-MACHINEKEY", "A configured machine key lets applications decrypt each other tickets; ticket compatibility must be considered when authentication moves",
                     detail, "D-AUTH-TARGET", AuthGateTitle, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.CustomPipeline:
+                collector.Hit(node.Id, "R-AUTH-PIPELINE", "Custom code authenticates or authorizes requests inside the HTTP pipeline; it needs an architectural decision (middleware or the target identity system)",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresArchitecturalReplacement, RequiresHumanDecision);
                 break;
 
             case AuthenticationAnalyzer.NoAuthentication:

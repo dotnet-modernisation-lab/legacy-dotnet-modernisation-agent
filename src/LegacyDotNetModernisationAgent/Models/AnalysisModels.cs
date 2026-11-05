@@ -171,6 +171,16 @@ public sealed record AccessRule(
     string Location,
     int? Line);
 
+/// <summary>
+/// An observation about a well-known risky setting, for a security reviewer. It is a hint, not a finding about
+/// enforcement or exploitability, and it never feeds migration policy.
+/// </summary>
+public sealed record ReviewHint(
+    string Id,
+    string Observation,
+    string Location);
+
 public sealed record AuthenticationAssessment(
     IReadOnlyList<AuthMechanism> Mechanisms,
-    IReadOnlyList<AccessRule> AccessRules);
+    IReadOnlyList<AccessRule> AccessRules,
+    IReadOnlyList<ReviewHint> ReviewHints);

@@ -482,6 +482,13 @@ public sealed partial class ArchitecturalGraphBuilder
             return ("Dal", "DataAccess");
         }
 
+        var pipeline = a.Technologies.FirstOrDefault(f => f.Technology == HttpPipelineAnalyzer.HttpPipeline && f.Subject == type.Name && f.Location == type.Location);
+
+        if (pipeline is not null)
+        {
+            return (pipeline.Evidence.Split(':')[0], "Hosting");
+        }
+
         if (a.Wcf.DataContracts.Contains(type.Name, StringComparer.OrdinalIgnoreCase))
         {
             return ("DataContract", "Unclassified");

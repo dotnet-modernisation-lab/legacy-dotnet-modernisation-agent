@@ -35,6 +35,10 @@ public sealed partial class AuthenticationAnalyzer
     public const string NoAuthentication = "NoAuthenticationConfigured";
     public const string ExternalIdentity = "ExternalIdentityProvider";
     public const string DirectoryServices = "ActiveDirectory";
+    public const string CustomPipeline = "CustomAuthPipeline";
+
+    // ASP.NET pipeline events at which custom code can authenticate or authorize a request.
+    private static readonly string[] AuthEvents = ["AuthenticateRequest", "PostAuthenticateRequest", "AuthorizeRequest", "PostAuthorizeRequest"];
 
     private static readonly string[] MembershipApi = ["ValidateUser", "GetUser", "CreateUser", "DeleteUser", "UpdateUser", "FindUsersByName", "GetUserNameByEmail", "GeneratePassword"];
     private static readonly string[] RolesApi = ["IsUserInRole", "GetRolesForUser", "GetAllRoles", "AddUserToRole", "AddUserToRoles", "RemoveUserFromRole", "RoleExists", "CreateRole"];
@@ -130,7 +134,8 @@ public sealed partial class AuthenticationAnalyzer
             new AuthenticationAssessment(
                 mechanisms,
                 rules.OrderBy(rule => rule.Source, StringComparer.Ordinal).ThenBy(rule => rule.Location, StringComparer.Ordinal)
-                    .ThenBy(rule => rule.Line ?? 0).ThenBy(rule => rule.Target, StringComparer.Ordinal).ToList()),
+                    .ThenBy(rule => rule.Line ?? 0).ThenBy(rule => rule.Target, StringComparer.Ordinal).ToList(),
+                SecurityHintAnalyzer.Analyze(configs)),
             findings);
     }
 
@@ -165,6 +170,19 @@ public sealed partial class AuthenticationAnalyzer
                 {
                     Add(Authorization, AuthorizationAttributes, $"custom authorization: {type.Name} derives from {baseType.SimpleName}", baseType.Line, type.Name);
                 }
+            }
+
+            foreach (var pipelineEvent in source.Identifiers
+                         .Where(identifier => identifier.Type == type.Name && AuthEvents.Contains(identifier.Name, StringComparer.OrdinalIgnoreCase))
+                         .GroupBy(identifier => identifier.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                Add(Authentication, CustomPipeline, $"{type.Name} hooks {pipelineEvent.Key}", pipelineEvent.Min(identifier => identifier.Line), type.Name);
+            }
+
+            foreach (var method in type.Methods.Where(method => method.Name.StartsWith("Application_", StringComparison.OrdinalIgnoreCase)
+                                                                 && AuthEvents.Any(name => method.Name.Equals($"Application_{name}", StringComparison.OrdinalIgnoreCase))))
+            {
+                Add(Authentication, CustomPipeline, $"{type.Name}.{method.Name} (Global.asax handler)", method.StartLine, type.Name);
             }
 
             AddAttributeRules(type.Attributes, type.Name, type.Name, source.Path, hits, rules);
