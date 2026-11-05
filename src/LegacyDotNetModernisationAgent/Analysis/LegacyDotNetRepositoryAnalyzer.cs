@@ -38,6 +38,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var dataAccess = new LegacyDataAccessAnalyzer().Analyze(root, projects, sources, configs);
         var configurationReads = new ConfigurationReadAnalyzer().Analyze(sources);
         var assemblies = new LegacyAssemblyAnalyzer().Analyze(root, projects, csla.UsedTypeNames);
+        var structure = new TypeDependencyAnalyzer().Analyze(projects, sources);
 
         var technologies = webForms
             .Concat(csla.Findings)
@@ -59,7 +60,9 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             BuildDependencies(projects),
             assemblies,
             wcf.Assessment,
-            dataAccess.Assessment);
+            dataAccess.Assessment,
+            structure.DeclaredTypes,
+            structure.Dependencies);
     }
 
     private static DotNetPlatform ResolvePlatform(IReadOnlyList<DotNetProjectAssessment> projects)

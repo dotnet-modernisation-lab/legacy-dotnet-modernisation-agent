@@ -42,6 +42,22 @@ public sealed class AssessCommand
             Console.WriteLine($"  binary {binary.Name} {binary.Version} CLR {binary.ClrMetadataVersion} token {binary.PublicKeyToken ?? "none"} ({binary.PublicTypeCount} public types)");
         }
 
+        var graph = new ArchitecturalGraphBuilder().Build(assessment);
+        var graphPath = Path.Combine(artifactsDirectory, "legacy-dependency-graph.json");
+
+        await File.WriteAllTextAsync(graphPath, JsonSerializer.Serialize(graph, JsonOptions), cancellationToken);
+
+        Console.WriteLine($"  graph: {graph.Nodes.Count} nodes, {graph.Edges.Count} edges, {graph.Boundaries.Count} layer boundaries, {graph.Paths.Count} page-to-stored-procedure paths");
+
+        var analysis = new MigrationCharacteristicPolicy().Evaluate(assessment, graph);
+        var analysisPath = Path.Combine(artifactsDirectory, "migration-analysis.json");
+
+        await File.WriteAllTextAsync(analysisPath, JsonSerializer.Serialize(analysis, JsonOptions), cancellationToken);
+
+        Console.WriteLine($"  policy: {analysis.Components.Count} components assessed, {analysis.DecisionGates.Count} human decision gates, {analysis.PotentiallyPortableAreas.Count} potentially portable");
+
         Console.WriteLine($"Wrote {outputPath}");
+        Console.WriteLine($"Wrote {graphPath}");
+        Console.WriteLine($"Wrote {analysisPath}");
     }
 }

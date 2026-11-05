@@ -1,0 +1,294 @@
+using LegacyDotNetModernisationAgent.Models;
+using static LegacyDotNetModernisationAgent.Models.MigrationCharacteristic;
+
+namespace LegacyDotNetModernisationAgent.Analysis;
+
+/// <summary>
+/// Deterministic migration policy. Each rule fires on detected facts and records its ID, reason and evidence.
+/// It never says a technology is "bad"; it says what kind of change the component needs and which decisions
+/// belong to a person. The Strategy Agent explains this output; it cannot change it.
+/// </summary>
+public sealed class MigrationCharacteristicPolicy
+{
+    private static readonly MigrationCharacteristic[] BoundCharacteristics =
+        [RequiresFrameworkReplacement, RequiresArchitecturalReplacement, RequiresHumanDecision];
+
+    private static readonly string[] ArchitecturalFrameworkAssemblies = ["System.Runtime.Remoting", "System.EnterpriseServices"];
+
+    private sealed class Collector
+    {
+        public Dictionary<string, List<(MigrationCharacteristic[] Set, PolicyRuleHit Hit)>> Hits { get; } = new(StringComparer.Ordinal);
+        public Dictionary<string, string> Dispositions { get; } = new(StringComparer.Ordinal);
+        public Dictionary<string, (string Title, SortedSet<string> Nodes, SortedSet<string> Rules)> Gates { get; } = new(StringComparer.Ordinal);
+
+        public void Hit(string nodeId, string ruleId, string reason, string evidence, string? gateId, string? gateTitle, params MigrationCharacteristic[] set)
+        {
+            if (!Hits.TryGetValue(nodeId, out var list))
+            {
+                Hits[nodeId] = list = [];
+            }
+
+            if (list.Any(item => item.Hit.RuleId == ruleId))
+            {
+                return;
+            }
+
+            list.Add((set, new PolicyRuleHit(ruleId, reason, evidence)));
+
+            if (gateId is not null)
+            {
+                if (!Gates.TryGetValue(gateId, out var gate))
+                {
+                    Gates[gateId] = gate = (gateTitle!, new SortedSet<string>(StringComparer.Ordinal), new SortedSet<string>(StringComparer.Ordinal));
+                }
+
+                gate.Nodes.Add(nodeId);
+                gate.Rules.Add(ruleId);
+            }
+        }
+    }
+
+    public MigrationAnalysis Evaluate(LegacyDotNetProjectAssessment assessment, LegacyDependencyGraph graph)
+    {
+        var collector = new Collector();
+        var edgesFrom = graph.Edges.ToLookup(edge => edge.From, StringComparer.Ordinal);
+        var nodes = graph.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        var declared = assessment.DeclaredTypes.ToDictionary(type => type.Id, StringComparer.Ordinal);
+
+        foreach (var node in graph.Nodes)
+        {
+            switch (node.Kind)
+            {
+                case "Page" or "UserControl" or "MasterPage":
+                    {
+                        collector.Hit(node.Id, "R-WF-PAGE",
+                            "Web Forms page model (server-side controls and page lifecycle) has no equivalent in modern .NET",
+                            node.Detail ?? node.Location ?? node.Name,
+                            "D-UI-TARGET", "Decide the UI target for the Web Forms pages",
+                            RequiresFrameworkReplacement);
+
+                        var controls = assessment.Technologies
+                            .Where(f => f.Technology == WebFormsAnalyzer.ServerControl && f.Location == node.Location)
+                            .Select(f => f.Evidence)
+                            .ToList();
+
+                        if (controls.Count > 0)
+                        {
+                            collector.Hit(node.Id, "R-WF-CONTROLS", "Server controls render and bind on the server and need UI replacement",
+                                string.Join(", ", controls), null, null, RequiresFrameworkReplacement);
+                        }
+
+                        if (node.Technologies.Contains(WebFormsAnalyzer.PageLifecycle))
+                        {
+                            var lifecycle = assessment.Technologies
+                                .Where(f => f.Technology == WebFormsAnalyzer.PageLifecycle && node.Detail is not null && node.Detail.Contains(f.Location, StringComparison.OrdinalIgnoreCase))
+                                .Select(f => f.Evidence).Distinct().Order(StringComparer.Ordinal).ToList();
+
+                            collector.Hit(node.Id, "R-WF-LIFECYCLE", "Initial-request versus postback behaviour must be kept (B-PAGE-001)",
+                                string.Join(", ", lifecycle), null, null, RequiresFrameworkReplacement, RequiresBehaviourPreservation);
+                        }
+
+                        break;
+                    }
+
+                case "GlobalAsax":
+                    collector.Hit(node.Id, "R-WF-GLOBAL", "Global.asax application events belong to the System.Web host", node.Location ?? node.Name, null, null, RequiresFrameworkReplacement);
+                    break;
+
+                case "SessionState":
+                    collector.Hit(node.Id, "R-SESSION", "Server-side Session state needs a state-management redesign",
+                        node.Detail ?? "Session usage detected", "D-STATE-MANAGEMENT", "Decide how session state is handled after the UI replatform",
+                        RequiresArchitecturalReplacement, RequiresBehaviourPreservation);
+                    break;
+
+                case "FrameworkAssembly":
+                    collector.Hit(node.Id, "R-FRAMEWORK-ONLY", "Assembly exists only in .NET Framework; remove or replace after boundaries move",
+                        node.Detail ?? node.Name, null, null,
+                        ArchitecturalFrameworkAssemblies.Contains(node.Name, StringComparer.OrdinalIgnoreCase)
+                            ? RequiresArchitecturalReplacement : RequiresFrameworkReplacement);
+                    break;
+
+                case "Assembly" when node.Name.StartsWith("Csla", StringComparison.OrdinalIgnoreCase):
+                    collector.Hit(node.Id, "R-CSLA-LIB", "Supplied CSLA binary is a legacy line; target version is a decision, not a mechanical upgrade",
+                        node.Detail ?? node.Name, "D-CSLA-TARGET", "Decide the CSLA target (retain, upgrade or replace)",
+                        RequiresLibraryUpgrade, RequiresHumanDecision);
+                    break;
+
+                case "CslaBusinessObject":
+                    collector.Hit(node.Id, "R-CSLA-BO", "Business object derives from the legacy CSLA base class",
+                        "Inherits Csla.ReadOnlyBase", "D-CSLA-TARGET", "Decide the CSLA target (retain, upgrade or replace)",
+                        RequiresLibraryUpgrade, RequiresHumanDecision);
+                    break;
+
+                case "WcfContract":
+                    collector.Hit(node.Id, "R-WCF-CONTRACT", "Service-contract behaviour must be separated from the WCF implementation technology",
+                        node.Location ?? node.Name, "D-WCF-TARGET", "Decide the service boundary technology",
+                        RequiresHumanDecision, RequiresBehaviourPreservation);
+                    break;
+
+                case "WcfService" or "WcfClient" or "WcfHost":
+                    collector.Hit(node.Id, "R-WCF-BOUNDARY", "Part of the WCF service boundary; its migration depends on the service decision",
+                        node.Location ?? node.Name, "D-WCF-TARGET", "Decide the service boundary technology",
+                        RequiresHumanDecision);
+                    break;
+
+                case "StoredProcedureContract":
+                    collector.Hit(node.Id, "R-SP-CONTRACT", "Stored-procedure contract is preserved unless deliberately redesigned",
+                        node.Detail ?? node.Name, "D-DATA-CONTRACT", "Agree whether any data-contract change is acceptable",
+                        RequiresBehaviourPreservation);
+                    collector.Dispositions[node.Id] = "Preserve unless deliberately redesigned";
+                    break;
+
+                case "Fixture":
+                    collector.Dispositions[node.Id] = "Test infrastructure only";
+                    break;
+
+                case "Dal":
+                    collector.Hit(node.Id, "R-DAL-CONTRACT", "DAL implements the stored-procedure contract; its behaviour is what must survive",
+                        node.Location ?? node.Name, null, null, RequiresBehaviourPreservation);
+                    break;
+
+                case "DataContract":
+                    collector.Hit(node.Id, "R-DATA-CONTRACT-TYPE", "Data-contract semantics (CustomerId, CustomerRecord) must be preserved",
+                        node.Location ?? node.Name, null, null, RequiresBehaviourPreservation, RequiresRecompile);
+                    break;
+            }
+
+            // Cross-cutting rules, driven by edges and detected technologies.
+            if (node.Kind != "Page" && edgesFrom[node.Id].Any(edge => edge.Type == EdgeType.UsesSession))
+            {
+                collector.Hit(node.Id, "R-SESSION-USER", "Code reads or writes Session",
+                    string.Join("; ", edgesFrom[node.Id].Where(e => e.Type == EdgeType.UsesSession).Select(e => e.Evidence)),
+                    "D-STATE-MANAGEMENT", "Decide how session state is handled after the UI replatform",
+                    RequiresArchitecturalReplacement, RequiresBehaviourPreservation);
+            }
+            else if (node.Kind == "Page" && edgesFrom[node.Id].Any(edge => edge.Type == EdgeType.UsesSession))
+            {
+                collector.Hit(node.Id, "R-SESSION-USER", "Page reads or writes Session",
+                    string.Join("; ", edgesFrom[node.Id].Where(e => e.Type == EdgeType.UsesSession).Select(e => e.Evidence)),
+                    "D-STATE-MANAGEMENT", "Decide how session state is handled after the UI replatform",
+                    RequiresArchitecturalReplacement, RequiresBehaviourPreservation);
+            }
+
+            if (node.Kind == "Assembly")
+            {
+                var frameworkOnly = edgesFrom[node.Id].Where(edge => edge.To.StartsWith("fw:", StringComparison.Ordinal)).Select(edge => edge.To[3..]).Order(StringComparer.Ordinal).ToList();
+
+                if (frameworkOnly.Count > 0)
+                {
+                    collector.Hit(node.Id, "R-ASSEMBLY-FRAMEWORK-DEPS", "Binary references assemblies that exist only in .NET Framework",
+                        string.Join(", ", frameworkOnly), null, null, RequiresFrameworkReplacement);
+                }
+            }
+            else if (node.Layer != "Presentation" && node.Kind is not ("FrameworkAssembly" or "LibraryType")
+                && edgesFrom[node.Id].Any(edge => edge.To == "fw:System.Web"))
+            {
+                collector.Hit(node.Id, "R-SYSTEMWEB-IN-LOGIC", "Non-UI code depends on System.Web (HttpContext); it cannot move until decoupled",
+                    string.Join("; ", edgesFrom[node.Id].Where(e => e.To == "fw:System.Web").Select(e => e.Evidence)),
+                    null, null, RequiresFrameworkReplacement);
+            }
+
+            if (node.Technologies.Contains(CslaAnalyzer.CslaDataPortal) || node.Id == "lib:Csla.DataPortal")
+            {
+                collector.Hit(node.Id, "R-DATAPORTAL", "Distributed business-object semantics (DataPortal) need an architectural assessment",
+                    string.Join("; ", edgesFrom[node.Id].Where(e => e.To == "lib:Csla.DataPortal").Select(e => e.Evidence).DefaultIfEmpty("Csla.DataPortal")),
+                    "D-DATAPORTAL-TARGET", "Decide what replaces or retains the DataPortal semantics",
+                    RequiresArchitecturalReplacement, RequiresHumanDecision);
+            }
+
+            if (declared.TryGetValue(node.Id, out var type) && type.Imports.Contains("System.Configuration", StringComparer.OrdinalIgnoreCase))
+            {
+                collector.Hit(node.Id, "R-CONFIG-API", "System.Configuration needs the ConfigurationManager package in modern .NET",
+                    "Imports System.Configuration", null, null, RequiresLibraryUpgrade);
+            }
+        }
+
+        // Anything left without a bound characteristic is plain VB source that at least needs a recompile.
+        foreach (var node in graph.Nodes.Where(n => n.Kind is "Class" or "Interface" or "Module" or "DataContract" or "Dal"))
+        {
+            if (!collector.Hits.TryGetValue(node.Id, out var hits) || hits.All(h => !h.Set.Intersect(BoundCharacteristics).Any()))
+            {
+                collector.Hit(node.Id, "R-RECOMPILE", "VB source with no detected framework coupling; retargeting needs at least a recompile",
+                    node.Location ?? node.Name, null, null, RequiresRecompile);
+            }
+        }
+
+        var bound = collector.Hits
+            .Where(item => item.Value.Any(hit => hit.Set.Intersect(BoundCharacteristics).Any()))
+            .Select(item => item.Key)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var (portable, coupled) = Portability(graph, nodes, bound);
+
+        var components = graph.Nodes
+            .Where(node => node.Kind != "ConfigurationSetting" && (collector.Hits.ContainsKey(node.Id) || collector.Dispositions.ContainsKey(node.Id)))
+            .Select(node =>
+            {
+                var hits = collector.Hits.GetValueOrDefault(node.Id, []);
+                var set = hits.SelectMany(hit => hit.Set).Distinct().Order().ToList();
+
+                var disposition = collector.Dispositions.GetValueOrDefault(node.Id)
+                    ?? (portable.Contains(node.Id) ? "PotentiallyPortable" : coupled.Contains(node.Id) ? "CoupledToFrameworkBoundComponent" : null);
+
+                return new ComponentMigrationAssessment(node.Id, node.Kind, set, disposition, hits.Select(hit => hit.Hit).ToList());
+            })
+            .ToList();
+
+        return new MigrationAnalysis(
+            components,
+            collector.Gates
+                .OrderBy(gate => gate.Key, StringComparer.Ordinal)
+                .Select(gate => new DecisionGate(gate.Key, gate.Value.Title, gate.Value.Nodes.ToList(), gate.Value.Rules.ToList()))
+                .ToList(),
+            portable.Order(StringComparer.Ordinal).ToList(),
+            coupled.Order(StringComparer.Ordinal).ToList());
+    }
+
+    /// <summary>
+    /// A component is potentially portable when neither it nor anything it depends on carries a
+    /// framework-replacement, architectural-replacement or human-decision characteristic.
+    /// </summary>
+    private static (HashSet<string> Portable, HashSet<string> Coupled) Portability(
+        LegacyDependencyGraph graph,
+        Dictionary<string, GraphNode> nodes,
+        HashSet<string> bound)
+    {
+        var dependsOn = graph.Edges
+            .Where(edge => edge.Basis != "Convention")
+            .GroupBy(edge => edge.From, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Select(edge => edge.To).ToList(), StringComparer.Ordinal);
+
+        var portable = new HashSet<string>(StringComparer.Ordinal);
+        var coupled = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var node in graph.Nodes.Where(n => n.Kind is "Class" or "Interface" or "Module" or "DataContract" or "Dal"))
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal) { node.Id };
+            var queue = new Queue<string>([node.Id]);
+            var reachesBound = false;
+
+            while (queue.Count > 0 && !reachesBound)
+            {
+                foreach (var next in dependsOn.GetValueOrDefault(queue.Dequeue(), []))
+                {
+                    if (!seen.Add(next))
+                    {
+                        continue;
+                    }
+
+                    reachesBound |= bound.Contains(next);
+                    queue.Enqueue(next);
+                }
+            }
+
+            if (bound.Contains(node.Id))
+            {
+                continue;
+            }
+
+            (reachesBound ? coupled : portable).Add(node.Id);
+        }
+
+        return (portable, coupled);
+    }
+}

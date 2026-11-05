@@ -93,4 +93,6 @@ public sealed record LegacyDotNetProjectAssessment(
     IReadOnlyList<ComponentDependency> Dependencies,
     IReadOnlyList<LegacyAssemblyEvidence> Assemblies,
     WcfAssessment Wcf,
-    DataAccessAssessment DataAccess);
+    DataAccessAssessment DataAccess,
+    IReadOnlyList<DeclaredTypeInfo> DeclaredTypes,
+    IReadOnlyList<TypeDependency> TypeDependencies);

@@ -113,3 +113,25 @@ public sealed record DataAccessAssessment(
     IReadOnlyList<DalClassInfo> DalClasses,
     IReadOnlyList<StoredProcedureContractInfo> StoredProcedures,
     IReadOnlyList<FixtureBackingInfo> Fixtures);
+
+// ---- Type-level structure (input to the architectural graph) -------------------------------
+
+public sealed record DeclaredTypeInfo(
+    string Id,
+    string Name,
+    string Kind,
+    string Project,
+    string Location,
+    int Line,
+    IReadOnlyList<string> Imports);
+
+/// <summary>
+/// "From uses To" at type level, resolved through project references.
+/// Kind is Reference, Inherits or Implements; names that match several visible types are skipped, never guessed.
+/// </summary>
+public sealed record TypeDependency(
+    string From,
+    string To,
+    string Kind,
+    string Location,
+    int Line);

@@ -12,7 +12,8 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 |---|---|
 | B. Repository inventory (solution, old-style projects, packages.config, references, framework/language) | done |
 | C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures) | done |
-| D. Architectural graph, migration characteristics | next |
+| D. Architectural graph, layer boundaries, impact, migration characteristics | done |
+| E. Behaviour contracts and probe | next |
 
 ## Use
 
@@ -20,7 +21,11 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 dotnet run --project src/LegacyDotNetModernisationAgent -- assess <repositoryPath> [artifactsDirectory]
 ```
 
-Writes `Artifacts/legacy-project-assessment.json`.
+Writes, deterministically (byte-identical across runs):
+
+- `Artifacts/legacy-project-assessment.json`: facts (projects, findings, binary evidence, WCF, data access, type structure)
+- `Artifacts/legacy-dependency-graph.json`: nodes, typed edges with basis and evidence, layer boundaries, impact sets, page-to-stored-procedure paths
+- `Artifacts/migration-analysis.json`: migration characteristics per component (rule ID, reason, evidence), human decision gates, potentially portable areas
 
 ## How the analysers work
 
@@ -32,4 +37,6 @@ Writes `Artifacts/legacy-project-assessment.json`.
 ## Known limits
 
 - Only VB source is analysed for technologies. C# files are inventoried but not scanned (the sample has one trivial C# file).
-- Technology findings are facts, not policy: migration characteristics are assigned in Milestone D.
+- Type references are matched by name and resolved through project references; a name that stays ambiguous is skipped, never guessed.
+- `Portable` is never assigned: without a compile and a behaviour check, code with no detected coupling is reported as `RequiresRecompile` / `PotentiallyPortable`.
+- Edges with basis `NamingConvention` or `Convention` are weaker evidence than `Declared`, `DirectReference` or `SourceDeclaration`, and are labelled as such.
