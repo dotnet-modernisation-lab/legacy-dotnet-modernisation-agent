@@ -132,6 +132,10 @@ public sealed class MigrationCharacteristicPolicy
                         RequiresHumanDecision);
                     break;
 
+                case "AuthenticationMechanism":
+                    AuthenticationRule(collector, node);
+                    break;
+
                 case "StoredProcedureContract":
                     collector.Hit(node.Id, "R-SP-CONTRACT", "Stored-procedure contract is preserved unless deliberately redesigned",
                         node.Detail ?? node.Name, "D-DATA-CONTRACT", "Agree whether any data-contract change is acceptable",
@@ -186,6 +190,14 @@ public sealed class MigrationCharacteristicPolicy
                 collector.Hit(node.Id, "R-SYSTEMWEB-IN-LOGIC", "Non-UI code depends on System.Web (HttpContext); it cannot move until decoupled",
                     string.Join("; ", edgesFrom[node.Id].Where(e => e.To == "fw:System.Web").Select(e => e.Evidence)),
                     null, null, RequiresFrameworkReplacement);
+            }
+
+            var usedAuthentication = edgesFrom[node.Id].Where(edge => edge.Type == EdgeType.UsesAuthentication).Select(edge => edge.To[5..]).Distinct().Order(StringComparer.Ordinal).ToList();
+
+            if (usedAuthentication.Count > 0)
+            {
+                collector.Hit(node.Id, "R-AUTH-USER", "Code depends on authentication or authorization; its outcomes per role must be preserved and its target decided",
+                    "uses " + string.Join(", ", usedAuthentication), "D-AUTH-TARGET", AuthGateTitle, RequiresBehaviourPreservation, RequiresHumanDecision);
             }
 
             if (node.Technologies.Contains(CslaAnalyzer.CslaDataPortal) || node.Id == "lib:Csla.DataPortal")
@@ -266,6 +278,66 @@ public sealed class MigrationCharacteristicPolicy
                 .ToList(),
             portable.Order(StringComparer.Ordinal).ToList(),
             coupled.Order(StringComparer.Ordinal).ToList());
+    }
+
+    private const string AuthGateTitle = "Decide the authentication and authorization target";
+
+    private static void AuthenticationRule(Collector collector, GraphNode node)
+    {
+        var detail = node.Detail ?? node.Name;
+
+        switch (node.Name)
+        {
+            case AuthenticationAnalyzer.Forms:
+                collector.Hit(node.Id, "R-AUTH-FORMS", "Forms authentication (System.Web.Security) has no direct equivalent in modern .NET; tickets, cookies and the login flow must be replaced",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresFrameworkReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.Membership:
+                collector.Hit(node.Id, "R-AUTH-MEMBERSHIP", "Membership and role providers are not part of modern .NET; the provider model needs an architectural replacement",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresArchitecturalReplacement, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.Windows or AuthenticationAnalyzer.IisAuthentication or AuthenticationAnalyzer.Impersonation:
+                collector.Hit(node.Id, "R-AUTH-WINDOWS", "Windows or IIS-hosted identity ties authentication to the hosting platform; the target hosting and identity flow need a decision",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresBehaviourPreservation, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.AspNetIdentity or AuthenticationAnalyzer.Claims or AuthenticationAnalyzer.ExternalIdentity or AuthenticationAnalyzer.DirectoryServices:
+                collector.Hit(node.Id, "R-AUTH-IDENTITY-LIB", "Identity library or directory integration; the target version or provider is a decision",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresLibraryUpgrade, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.CustomPrincipal:
+                collector.Hit(node.Id, "R-AUTH-CUSTOM-PRINCIPAL", "Identity is constructed or propagated by hand (custom principal); this needs an architectural decision, especially across a service boundary",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresArchitecturalReplacement, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.SharedSecret:
+                collector.Hit(node.Id, "R-AUTH-SHARED-SECRET", "Credential-like settings are read in code (shared secret or trusted-subsystem pattern); service-to-service trust needs a security design decision",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.WcfSecurity:
+                collector.Hit(node.Id, "R-AUTH-WCF-SECURITY", "WCF binding or credential security follows the service-boundary decision",
+                    detail, "D-WCF-TARGET", "Decide the service boundary technology", RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.MachineKey:
+                collector.Hit(node.Id, "R-AUTH-MACHINEKEY", "A configured machine key lets applications decrypt each other tickets; ticket compatibility must be considered when authentication moves",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresHumanDecision);
+                break;
+
+            case AuthenticationAnalyzer.NoAuthentication:
+                collector.Hit(node.Id, "R-AUTH-NONE", "Configured with no authentication; confirm this relies on a trusted caller and decide how the target secures it",
+                    detail, "D-AUTH-TARGET", AuthGateTitle, RequiresHumanDecision);
+                break;
+
+            default:
+                collector.Hit(node.Id, "R-AUTH-RULES", "Declared access rules or identity checks; outcomes per role must be preserved",
+                    detail, null, null, RequiresBehaviourPreservation);
+                break;
+        }
     }
 
     /// <summary>

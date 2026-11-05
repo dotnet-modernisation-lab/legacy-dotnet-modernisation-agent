@@ -19,7 +19,8 @@ Principle: the tool will be run against legacy code bases we have not seen. **An
 - [x] Regression: sample graph and migration analysis unchanged
 - [x] Run against code that is not the sample (this repo: C#, SDK-style, `.slnx`) and against a non-.NET folder (clean error)
 - [x] C# analyser: language-neutral source fact model (VB and C# extractors); all analysers read the model. Proved: VB output byte-identical after the refactor; a C# port of the customer path (scratchpad `csmirror`, with code-behind + designer partial) yields the same graph shape and path
-- [ ] Authentication detection (Forms/Membership/Windows/OIDC) and a human decision gate for the authentication target
+- [x] Authentication detection (Forms, Membership/roles, Windows/IIS, OWIN/Identity, claims, custom principal, shared-secret/trusted-subsystem, WCF security, machineKey, impersonation, anonymous) in VB and C# code, config and packages; declared access rules (CSLA `AuthorizationRules`, `[Authorize]`-style attributes, web.config allow/deny); graph nodes and `UsesAuthentication` edges; per-mechanism policy rules; human gate `D-AUTH-TARGET`; derived contract `B-AUTH-001`. Secrets are never recorded (key names and presence only). Proved on the sample, the C# mirror and a stress fixture with planted secrets (none leaked)
+- [ ] Authentication gaps: role checks written as plain code (`If role <> "Admin"`) are not extracted as access rules; ASP.NET `location` rules are recorded per scope but not evaluated; `this.User`/`Me.User` identity checks only match `IsAuthenticated`/`IsInRole`; no detection of custom `HttpModule`/`DelegatingHandler` auth pipelines or WCF `ServiceAuthorizationManager` wiring beyond the base class
 - [ ] Analysers as plug-ins declaring the facts they emit; policy rules as data
 
 - [ ] C# analyser gaps found while building it:

@@ -138,10 +138,12 @@ public static class VbFactExtractor
         var calleeName = member is null ? invocation.Expression : member.Name;
         var typeArgument = FirstTypeArgument(calleeName);
 
-        var argument = invocation.ArgumentList?.Arguments.FirstOrDefault() as SimpleArgumentSyntax;
-        var firstString = argument?.Expression is LiteralExpressionSyntax literal && literal.Kind() == SyntaxKind.StringLiteralExpression
-            ? literal.Token.ValueText
-            : null;
+        // Literal string arguments in order; null where an argument is not a string literal.
+        var stringArguments = invocation.ArgumentList?.Arguments
+            .Select(argument => (argument as SimpleArgumentSyntax)?.Expression is LiteralExpressionSyntax literal && literal.Kind() == SyntaxKind.StringLiteralExpression
+                ? literal.Token.ValueText
+                : null)
+            .ToList() ?? [];
 
         return new InvocationFact(
             Compact(invocation.Expression),
@@ -149,7 +151,8 @@ public static class VbFactExtractor
             member is null ? null : SimpleName(member.Expression),
             typeArgument,
             typeArgument is null ? "" : $"(Of {typeArgument})",
-            firstString,
+            stringArguments.FirstOrDefault(),
+            stringArguments,
             IsIndexer: false,
             invocation.Parent is AssignmentStatementSyntax assignment && assignment.Left == invocation,
             NearestClass(invocation),

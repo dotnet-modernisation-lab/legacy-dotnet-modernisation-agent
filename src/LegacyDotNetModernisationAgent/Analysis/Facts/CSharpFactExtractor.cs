@@ -122,6 +122,7 @@ public static class CSharpFactExtractor
             typeArgument,
             typeArgument is null ? "" : $"<{typeArgument}>",
             FirstString(invocation.ArgumentList.Arguments),
+            StringArguments(invocation.ArgumentList.Arguments),
             IsIndexer: false,
             IsAssignmentTarget: false,
             NearestClass(invocation),
@@ -140,12 +141,20 @@ public static class CSharpFactExtractor
             null,
             "",
             FirstString(element.ArgumentList.Arguments),
+            StringArguments(element.ArgumentList.Arguments),
             IsIndexer: true,
             element.Parent is AssignmentExpressionSyntax assignment && assignment.Left == element,
             NearestClass(element),
             EnclosingMethod(element),
             Line(element));
     }
+
+    private static List<string?> StringArguments(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
+        arguments
+            .Select(argument => argument.Expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression)
+                ? literal.Token.ValueText
+                : null)
+            .ToList();
 
     private static string? FirstString(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
         arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression)

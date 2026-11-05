@@ -52,12 +52,14 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var configurationReads = new ConfigurationReadAnalyzer().Analyze(sources);
         var assemblies = new LegacyAssemblyAnalyzer().Analyze(root, projects, csla.UsedTypeNames);
         var structure = new TypeDependencyAnalyzer().Analyze(projects, sources);
+        var authentication = new AuthenticationAnalyzer().Analyze(sources, configs, projects);
 
         var technologies = webForms
             .Concat(csla.Findings)
             .Concat(wcf.Findings)
             .Concat(dataAccess.Findings)
             .Concat(configurationReads)
+            .Concat(authentication.Findings)
             .OrderBy(finding => finding.Technology, StringComparer.Ordinal)
             .ThenBy(finding => finding.Location, StringComparer.Ordinal)
             .ThenBy(finding => finding.Line ?? 0)
@@ -76,7 +78,8 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             dataAccess.Assessment,
             structure.DeclaredTypes,
             structure.Dependencies,
-            CoverageAnalyzer.Analyze(projects, discovery.Gaps.Concat(unreadable).ToList()));
+            CoverageAnalyzer.Analyze(projects, discovery.Gaps.Concat(unreadable).ToList()),
+            authentication.Assessment);
     }
 
     private static DotNetPlatform ResolvePlatform(IReadOnlyList<DotNetProjectAssessment> projects)

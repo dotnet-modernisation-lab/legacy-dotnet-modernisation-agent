@@ -169,6 +169,16 @@ public sealed partial class ArchitecturalGraphBuilder
             };
         }
 
+        foreach (var mechanism in assessment.Authentication.Mechanisms)
+        {
+            var mechanismId = $"auth:{mechanism.Kind}";
+
+            nodes[mechanismId] = new NodeBuilder(mechanismId, mechanism.Kind, "AuthenticationMechanism", "Infrastructure")
+            {
+                Detail = $"{mechanism.Summary} ({mechanism.EvidenceCount} use{(mechanism.EvidenceCount == 1 ? "" : "s")})"
+            };
+        }
+
         foreach (var binary in assessment.Assemblies)
         {
             var assemblyId = $"assembly:{Path.GetFileName(binary.Path)}";
@@ -352,6 +362,17 @@ public sealed partial class ArchitecturalGraphBuilder
             }
         }
 
+        foreach (var finding in findings.Where(f => f.Technology is AuthenticationAnalyzer.Authentication or AuthenticationAnalyzer.Authorization && f.Subject is not null))
+        {
+            var from = NodeOfDeclared(finding.Subject, finding.Location);
+            var mechanismId = $"auth:{finding.Evidence.Split(':')[0]}";
+
+            if (from is not null && nodes.ContainsKey(mechanismId))
+            {
+                edges.Add(new GraphEdge(from, mechanismId, EdgeType.UsesAuthentication, "SourceUsage", finding.Evidence, finding.Location, finding.Line));
+            }
+        }
+
         foreach (var finding in findings.Where(f => f.Technology == WebFormsAnalyzer.SystemWeb && f.Subject is not null))
         {
             var from = NodeOfDeclared(finding.Subject, finding.Location);
@@ -523,7 +544,7 @@ public sealed partial class ArchitecturalGraphBuilder
             list.Add(implementation.To);
         }
 
-        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
+        var subjects = new[] { "Assembly", "LibraryType", "FrameworkAssembly", "SessionState", "AuthenticationMechanism", "WcfContract", "StoredProcedureContract", "Fixture", "ConfigurationSetting" };
         var kinds = nodes.ToDictionary(n => n.Id, n => n.Kind, StringComparer.Ordinal);
 
         return nodes

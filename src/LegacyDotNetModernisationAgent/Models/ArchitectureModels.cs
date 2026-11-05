@@ -11,6 +11,7 @@ public enum EdgeType
     ImplementsContract,
     ReadsConfiguration,
     UsesSession,
+    UsesAuthentication,
     BackedBy
 }
 

@@ -48,6 +48,7 @@ public sealed record InvocationFact(
     string? TypeArgument,
     string TypeArgumentDisplay,
     string? FirstString,
+    IReadOnlyList<string?> StringArguments,
     bool IsIndexer,
     bool IsAssignmentTarget,
     string? Type,

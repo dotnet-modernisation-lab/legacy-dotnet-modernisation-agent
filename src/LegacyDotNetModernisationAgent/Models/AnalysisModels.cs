@@ -149,3 +149,28 @@ public sealed record AnalysisCoverage(
     IReadOnlyDictionary<string, int> SourceFilesByLanguage,
     int ProjectsAnalysed,
     IReadOnlyList<CoverageGap> Gaps);
+
+// ---- Authentication and authorization ------------------------------------------------------
+
+/// <summary>An authentication or identity mechanism found in code, configuration or packages.</summary>
+public sealed record AuthMechanism(
+    string Kind,
+    string Summary,
+    int EvidenceCount,
+    IReadOnlyList<string> Locations);
+
+/// <summary>
+/// A declared access rule (CSLA AuthorizationRules, [Authorize]-style attribute, web.config allow/deny).
+/// These are static facts: they say what is declared, not what the running app enforces.
+/// </summary>
+public sealed record AccessRule(
+    string Source,
+    string Target,
+    string Operation,
+    string Principals,
+    string Location,
+    int? Line);
+
+public sealed record AuthenticationAssessment(
+    IReadOnlyList<AuthMechanism> Mechanisms,
+    IReadOnlyList<AccessRule> AccessRules);

@@ -61,9 +61,33 @@ public static class BehaviourBaselineBuilder
                 "Role comes from the forms-authentication ticket and Session."),
 
             Architecture(graph, observed),
+            DeclaredAccess(assessment),
         };
 
         return new BehaviourBaseline(assessment.RepositoryName, assessment.CommitSha, ProbeName, contracts);
+    }
+
+    private static BehaviourContract DeclaredAccess(LegacyDotNetProjectAssessment assessment)
+    {
+        var observed = new SortedDictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var mechanism in assessment.Authentication.Mechanisms)
+        {
+            observed[$"mechanism.{mechanism.Kind}"] = $"{mechanism.Summary} ({mechanism.EvidenceCount} use(s))";
+        }
+
+        var number = 0;
+
+        foreach (var rule in assessment.Authentication.AccessRules)
+        {
+            observed[$"rule.{++number:000}"] = $"{rule.Source}: {rule.Target} {rule.Operation} {rule.Principals}".TrimEnd();
+        }
+
+        return new BehaviourContract(
+            "B-AUTH-001", "Declared authentication mechanisms and access rules keep the same outcomes per role", "Authentication", "Derived",
+            observed,
+            [],
+            "Derived from analysis: what is declared in code and configuration. It does not prove what the running app enforces; B-ACCESS-001 observes that.");
     }
 
     private static BehaviourContract DataContract(LegacyDotNetProjectAssessment assessment, LegacyDependencyGraph graph)

@@ -14,6 +14,7 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 | C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures) | done |
 | D. Architectural graph, layer boundaries, impact, migration characteristics | done |
 | E. Behaviour contracts and probe (`behave`, baseline, `--verify`) | done |
+| Authentication and authorization detection, access rules, decision gate | done |
 | F. Strategy Agent, JSON analysis input, Word strategy | next |
 
 ## Use
@@ -43,7 +44,7 @@ Nothing in the legacy solution changes and no test project is needed.
 - VB.NET and C# source are parsed with Roslyn **syntax trees** (nothing is compiled or run, and no references are needed) into a language-neutral fact model; every analyser reads only that model.
 - Binaries (`Csla.dll`) are read with `System.Reflection.Metadata`: name, version, CLR metadata version, public key token, referenced assemblies and decoded public/protected method signatures for the CSLA types the source uses. The binary is never loaded.
 - Every finding carries technology, evidence, file and line. Stored-procedure links say whether they are a `DirectReference` or only a `NamingConvention` match.
-- Secret-looking `appSettings` values are redacted in all output.
+- Secrets are never recorded: secret-looking `appSettings` values are redacted, credential-like settings are reported by key name only, and a `machineKey` or impersonation password is recorded only as present.
 
 ## Known limits
 

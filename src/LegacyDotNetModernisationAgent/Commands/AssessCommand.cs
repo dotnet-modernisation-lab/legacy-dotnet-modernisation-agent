@@ -37,6 +37,13 @@ public sealed class AssessCommand
             Console.WriteLine($"  [{group.Key}] {group.Count()} findings");
         }
 
+        Console.WriteLine($"  authentication: {assessment.Authentication.Mechanisms.Count} mechanism(s), {assessment.Authentication.AccessRules.Count} declared access rule(s)");
+
+        foreach (var mechanism in assessment.Authentication.Mechanisms)
+        {
+            Console.WriteLine($"    {mechanism.Kind} ({mechanism.EvidenceCount}): {mechanism.Summary}");
+        }
+
         Console.WriteLine($"  coverage: {assessment.Coverage.Gaps.Count} gap(s) in what was analysed");
 
         foreach (var gap in assessment.Coverage.Gaps)

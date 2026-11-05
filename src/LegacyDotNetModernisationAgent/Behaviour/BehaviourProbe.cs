@@ -52,18 +52,36 @@ public sealed class BehaviourProbe
             UrlOf("Profile.aspx"));
     }
 
+    /// <summary>IIS Express can exit at start-up if a previous instance is still shutting down; retry a few times.</summary>
+    private static async Task<IisExpressHost> StartWithRetryAsync(string name, string sitePath, int port, string readyPath, CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            var host = IisExpressHost.Start(name, sitePath, port);
+
+            try
+            {
+                await host.WaitUntilReadyAsync(readyPath, TimeSpan.FromSeconds(60), cancellationToken);
+
+                return host;
+            }
+            catch (InvalidOperationException) when (attempt < 3)
+            {
+                host.Dispose();
+                await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
+            }
+        }
+    }
+
     public async Task<SortedDictionary<string, string>> RunAsync(ProbeTargets targets, Action<string> log, CancellationToken cancellationToken)
     {
         var observed = new SortedDictionary<string, string>(StringComparer.Ordinal);
         var webPort = IisExpressHost.FindFreePort(60171 == targets.HostPort ? 60181 : 60171);
 
-        using var host = IisExpressHost.Start("WCF host", targets.HostSitePath, targets.HostPort);
-        using var web = IisExpressHost.Start("Web Forms app", targets.WebSitePath, webPort);
+        using var host = await StartWithRetryAsync("WCF host", targets.HostSitePath, targets.HostPort, "LegacyCustomerService.svc?wsdl", cancellationToken);
+        using var web = await StartWithRetryAsync("Web Forms app", targets.WebSitePath, webPort, targets.LoginUrl, cancellationToken);
 
         log($"started WCF host on {targets.HostPort} and Web Forms app on {webPort}");
-
-        await host.WaitUntilReadyAsync("LegacyCustomerService.svc?wsdl", TimeSpan.FromSeconds(60), cancellationToken);
-        await web.WaitUntilReadyAsync(targets.LoginUrl, TimeSpan.FromSeconds(60), cancellationToken);
 
         using (var wsdl = new ProbeSession(host.BaseAddress))
         {

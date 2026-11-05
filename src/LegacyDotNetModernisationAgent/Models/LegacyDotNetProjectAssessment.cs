@@ -96,4 +96,5 @@ public sealed record LegacyDotNetProjectAssessment(
     DataAccessAssessment DataAccess,
     IReadOnlyList<DeclaredTypeInfo> DeclaredTypes,
     IReadOnlyList<TypeDependency> TypeDependencies,
-    AnalysisCoverage Coverage);
+    AnalysisCoverage Coverage,
+    AuthenticationAssessment Authentication);
