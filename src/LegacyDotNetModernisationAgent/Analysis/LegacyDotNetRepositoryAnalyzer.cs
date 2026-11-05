@@ -19,11 +19,38 @@ public sealed class LegacyDotNetRepositoryAnalyzer
         var unreadable = new List<CoverageGap>();
         var projects = new List<DotNetProjectAssessment>();
 
+        var msBuild = MsBuildEvaluator.IsAvailable();
+
+        if (!msBuild)
+        {
+            unreadable.Add(new CoverageGap(
+                "MsBuildUnavailable",
+                "No MSBuild installation was found, so projects were read as plain XML.",
+                ".",
+                "Directory.Build.props, conditions and central package management are not seen."));
+        }
+
         foreach (var path in discovery.ProjectPaths)
         {
             try
             {
-                projects.Add(ProjectFileParser.Parse(root, path));
+                ProjectEvaluation? evaluation = null;
+
+                if (msBuild)
+                {
+                    evaluation = MsBuildEvaluator.TryEvaluate(root, path, out var failure);
+
+                    if (failure is not null)
+                    {
+                        unreadable.Add(new CoverageGap(
+                            "ProjectEvaluationFailed",
+                            $"MSBuild could not evaluate the project: {failure}",
+                            Path.GetRelativePath(root, path).Replace('\\', '/'),
+                            "Read as plain XML; build-file imports, conditions and central package versions are not seen."));
+                    }
+                }
+
+                projects.Add(ProjectFileParser.Parse(root, path, evaluation));
             }
             catch (Exception exception) when (exception is System.Xml.XmlException or IOException or NullReferenceException)
             {

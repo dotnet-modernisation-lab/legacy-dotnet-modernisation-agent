@@ -18,7 +18,7 @@ public static class ProjectFileParser
     private static readonly string[] ConfigFileNames =
         ["web.config", "app.config", "packages.config", "web.debug.config", "web.release.config"];
 
-    public static DotNetProjectAssessment Parse(string repositoryRoot, string projectPath)
+    public static DotNetProjectAssessment Parse(string repositoryRoot, string projectPath, ProjectEvaluation? evaluation = null)
     {
         var document = XDocument.Load(projectPath);
         var projectDirectory = Path.GetDirectoryName(projectPath)!;
@@ -39,7 +39,7 @@ public static class ProjectFileParser
 
         var (platform, targetFramework) = ResolveFramework(
             Property("TargetFrameworkVersion"),
-            Property("TargetFramework") ?? Property("TargetFrameworks"));
+            Property("TargetFramework") ?? Property("TargetFrameworks") ?? evaluation?.TargetFramework);
 
         var typeGuids = (Property("ProjectTypeGuids") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries)
@@ -76,6 +76,22 @@ public static class ProjectFileParser
                     ?? "",
                 null,
                 projectRelativePath)));
+
+        // Evaluation adds what the XML alone cannot see: packages from Directory.Build.props and central versions.
+        if (evaluation is not null)
+        {
+            var known = packages.Select(package => package.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            packages = packages
+                .Select(package => package.Version.Length == 0
+                    ? evaluation.Packages.FirstOrDefault(candidate => candidate.Id.Equals(package.Id, StringComparison.OrdinalIgnoreCase) && candidate.Version.Length > 0) is { } resolved
+                        ? package with { Version = resolved.Version }
+                        : package
+                    : package)
+                .ToList();
+
+            packages.AddRange(evaluation.Packages.Where(package => !known.Contains(package.Id)));
+        }
 
         var packagesConfig = Path.Combine(projectDirectory, "packages.config");
 
