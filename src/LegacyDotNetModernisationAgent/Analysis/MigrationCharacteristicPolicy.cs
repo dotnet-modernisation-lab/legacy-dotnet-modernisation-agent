@@ -203,6 +203,17 @@ public sealed class MigrationCharacteristicPolicy
             }
         }
 
+        // A technology the tool cannot analyse is never "portable": it goes to a person.
+        var unassessed = assessment.Coverage.Gaps.Where(gap => gap.Category == "UnanalysedTechnology").ToList();
+
+        if (unassessed.Count > 0)
+        {
+            collector.Gates["D-UNASSESSED-TECH"] = (
+                "Assess technologies the tool cannot yet analyse",
+                new SortedSet<string>(unassessed.Select(gap => $"project:{gap.Location} ({gap.What})"), StringComparer.Ordinal),
+                new SortedSet<string>(["R-UNASSESSED-TECH"], StringComparer.Ordinal));
+        }
+
         // Anything left without a bound characteristic is plain VB source that at least needs a recompile.
         foreach (var node in graph.Nodes.Where(n => n.Kind is "Class" or "Interface" or "Module" or "DataContract" or "Dal"))
         {
@@ -220,6 +231,15 @@ public sealed class MigrationCharacteristicPolicy
 
         var (portable, coupled) = Portability(graph, nodes, bound);
 
+        // Code in a project that uses technologies we cannot analyse is not "potentially portable": we cannot know.
+        var unassessedProjects = assessment.Projects
+            .Where(project => unassessed.Any(gap => gap.Location == project.Path))
+            .Select(project => project.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        portable.RemoveWhere(id => nodes[id].Project is not null && unassessedProjects.Contains(nodes[id].Project!));
+        coupled.RemoveWhere(id => nodes[id].Project is not null && unassessedProjects.Contains(nodes[id].Project!));
+
         var components = graph.Nodes
             .Where(node => node.Kind != "ConfigurationSetting" && (collector.Hits.ContainsKey(node.Id) || collector.Dispositions.ContainsKey(node.Id)))
             .Select(node =>
@@ -228,7 +248,11 @@ public sealed class MigrationCharacteristicPolicy
                 var set = hits.SelectMany(hit => hit.Set).Distinct().Order().ToList();
 
                 var disposition = collector.Dispositions.GetValueOrDefault(node.Id)
-                    ?? (portable.Contains(node.Id) ? "PotentiallyPortable" : coupled.Contains(node.Id) ? "CoupledToFrameworkBoundComponent" : null);
+                    ?? (portable.Contains(node.Id) ? "PotentiallyPortable"
+                        : coupled.Contains(node.Id) ? "CoupledToFrameworkBoundComponent"
+                        : node.Project is not null && unassessedProjects.Contains(node.Project) && !bound.Contains(node.Id)
+                            ? "Unassessed: project uses technologies the tool cannot analyse"
+                        : null);
 
                 return new ComponentMigrationAssessment(node.Id, node.Kind, set, disposition, hits.Select(hit => hit.Hit).ToList());
             })

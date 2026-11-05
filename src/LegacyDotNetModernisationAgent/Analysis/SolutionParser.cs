@@ -19,6 +19,16 @@ public static partial class SolutionParser
 
     public static IReadOnlyList<SolutionProjectEntry> Parse(string solutionPath)
     {
+        if (Path.GetExtension(solutionPath).Equals(".slnx", StringComparison.OrdinalIgnoreCase))
+        {
+            return System.Xml.Linq.XDocument.Load(solutionPath)
+                .Descendants()
+                .Where(element => element.Name.LocalName == "Project" && element.Attribute("Path") is not null)
+                .Select(element => (string)element.Attribute("Path")!)
+                .Select(path => new SolutionProjectEntry(Path.GetFileNameWithoutExtension(path), path.Replace('\\', '/'), "", ""))
+                .ToList();
+        }
+
         var text = File.ReadAllText(solutionPath);
 
         return ProjectLine()

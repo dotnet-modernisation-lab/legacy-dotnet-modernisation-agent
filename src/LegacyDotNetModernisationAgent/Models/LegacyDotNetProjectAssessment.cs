@@ -95,4 +95,5 @@ public sealed record LegacyDotNetProjectAssessment(
     WcfAssessment Wcf,
     DataAccessAssessment DataAccess,
     IReadOnlyList<DeclaredTypeInfo> DeclaredTypes,
-    IReadOnlyList<TypeDependency> TypeDependencies);
+    IReadOnlyList<TypeDependency> TypeDependencies,
+    AnalysisCoverage Coverage);

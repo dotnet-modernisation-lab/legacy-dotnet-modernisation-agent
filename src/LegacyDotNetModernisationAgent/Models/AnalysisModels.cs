@@ -135,3 +135,17 @@ public sealed record TypeDependency(
     string Kind,
     string Location,
     int Line);
+
+// ---- Coverage: what the tool did and did not understand ------------------------------------
+
+/// <summary>A thing the analysis could not assess. Gaps are findings: silence must never read as "clean".</summary>
+public sealed record CoverageGap(
+    string Category,
+    string What,
+    string? Location,
+    string Impact);
+
+public sealed record AnalysisCoverage(
+    IReadOnlyDictionary<string, int> SourceFilesByLanguage,
+    int ProjectsAnalysed,
+    IReadOnlyList<CoverageGap> Gaps);

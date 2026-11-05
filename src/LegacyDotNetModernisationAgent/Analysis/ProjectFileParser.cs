@@ -39,7 +39,7 @@ public static class ProjectFileParser
 
         var (platform, targetFramework) = ResolveFramework(
             Property("TargetFrameworkVersion"),
-            Property("TargetFramework"));
+            Property("TargetFramework") ?? Property("TargetFrameworks"));
 
         var typeGuids = (Property("ProjectTypeGuids") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries)
@@ -116,9 +116,13 @@ public static class ProjectFileParser
 
         if (targetFramework is not null)
         {
-            var platform = targetFramework.StartsWith("net4", StringComparison.OrdinalIgnoreCase)
-                ? DotNetPlatform.DotNetFramework
-                : DotNetPlatform.DotNetCore;
+            // Multi-targeting ("net48;net8.0") is Framework only if every target is.
+            var targets = targetFramework.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var framework = targets.Count(target => target.StartsWith("net4", StringComparison.OrdinalIgnoreCase));
+
+            var platform = framework == targets.Length ? DotNetPlatform.DotNetFramework
+                : framework == 0 ? DotNetPlatform.DotNetCore
+                : DotNetPlatform.Unknown;
 
             return (platform, targetFramework);
         }

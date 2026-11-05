@@ -37,6 +37,13 @@ public sealed class AssessCommand
             Console.WriteLine($"  [{group.Key}] {group.Count()} findings");
         }
 
+        Console.WriteLine($"  coverage: {assessment.Coverage.Gaps.Count} gap(s) in what was analysed");
+
+        foreach (var gap in assessment.Coverage.Gaps)
+        {
+            Console.WriteLine($"    [{gap.Category}] {gap.What}{(gap.Location is null ? "" : $" ({gap.Location})")}");
+        }
+
         foreach (var binary in assessment.Assemblies)
         {
             Console.WriteLine($"  binary {binary.Name} {binary.Version} CLR {binary.ClrMetadataVersion} token {binary.PublicKeyToken ?? "none"} ({binary.PublicTypeCount} public types)");

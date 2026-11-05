@@ -14,20 +14,32 @@ public sealed class LegacyDotNetRepositoryAnalyzer
     {
         var root = Path.GetFullPath(repositoryPath);
 
-        var solutionPath = Directory
-            .EnumerateFiles(root, "*.sln", SearchOption.TopDirectoryOnly)
-            .Order(StringComparer.Ordinal)
-            .FirstOrDefault()
-            ?? throw new FileNotFoundException($"No .sln found in {root}");
+        var discovery = ProjectDiscovery.Discover(root);
+        var unreadable = new List<CoverageGap>();
+        var projects = new List<DotNetProjectAssessment>();
 
-        var projects = SolutionParser
-            .Parse(solutionPath)
-            .Select(entry => Path.GetFullPath(Path.Combine(root, entry.RelativePath)))
-            .Where(path => path.EndsWith(".vbproj", StringComparison.OrdinalIgnoreCase)
-                        || path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-            .Select(path => ProjectFileParser.Parse(root, path))
-            .OrderBy(project => project.Path, StringComparer.Ordinal)
-            .ToList();
+        foreach (var path in discovery.ProjectPaths)
+        {
+            try
+            {
+                projects.Add(ProjectFileParser.Parse(root, path));
+            }
+            catch (Exception exception) when (exception is System.Xml.XmlException or IOException or NullReferenceException)
+            {
+                unreadable.Add(new CoverageGap(
+                    "ProjectUnreadable",
+                    $"Project could not be parsed: {exception.Message}",
+                    Path.GetRelativePath(root, path).Replace('\\', '/'),
+                    "Its code, references and technologies are not part of the assessment."));
+            }
+        }
+
+        if (projects.Count == 0)
+        {
+            throw new InvalidOperationException($"No analysable .vbproj or .csproj projects were found under {root}.");
+        }
+
+        projects = projects.OrderBy(project => project.Path, StringComparer.Ordinal).ToList();
 
         var sources = VbSourceLoader.Load(root, projects);
         var configs = WebConfigReader.ReadAll(root, projects);
@@ -62,7 +74,8 @@ public sealed class LegacyDotNetRepositoryAnalyzer
             wcf.Assessment,
             dataAccess.Assessment,
             structure.DeclaredTypes,
-            structure.Dependencies);
+            structure.Dependencies,
+            CoverageAnalyzer.Analyze(projects, discovery.Gaps.Concat(unreadable).ToList()));
     }
 
     private static DotNetPlatform ResolvePlatform(IReadOnlyList<DotNetProjectAssessment> projects)
