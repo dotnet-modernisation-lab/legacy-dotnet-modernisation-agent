@@ -1,42 +1,25 @@
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
 
-/// <summary>Records every ConfigurationManager.AppSettings("key") read: the evidence for ReadsConfiguration edges.</summary>
+/// <summary>Records every ConfigurationManager.AppSettings["key"] read: the evidence for ReadsConfiguration edges.</summary>
 public sealed class ConfigurationReadAnalyzer
 {
     public const string ConfigurationRead = "ConfigurationRead";
 
-    public IReadOnlyList<LegacyTechnologyFinding> Analyze(IReadOnlyList<VbSource> sources)
+    public IReadOnlyList<LegacyTechnologyFinding> Analyze(IReadOnlyList<SourceFacts> sources)
     {
-        var findings = new List<LegacyTechnologyFinding>();
-
-        foreach (var source in sources)
-        {
-            foreach (var invocation in source.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                if (!VbSyntax.Is(VbSyntax.Compact(invocation.Expression), "ConfigurationManager.AppSettings"))
-                {
-                    continue;
-                }
-
-                var key = VbSyntax.FirstStringArgument(invocation);
-
-                if (key is null)
-                {
-                    continue;
-                }
-
-                findings.Add(new LegacyTechnologyFinding(
+        return sources
+            .SelectMany(source => source.Invocations
+                .Where(call => string.Equals(call.CalleeText, "ConfigurationManager.AppSettings", StringComparison.OrdinalIgnoreCase)
+                               && call.FirstString is not null)
+                .Select(call => new LegacyTechnologyFinding(
                     ConfigurationRead,
-                    $"appSettings[{key}]",
+                    $"appSettings[{call.FirstString}]",
                     source.Path,
-                    VbSyntax.Line(invocation),
-                    VbSyntax.EnclosingClass(invocation)));
-            }
-        }
-
-        return findings;
+                    call.Line,
+                    call.Type)))
+            .ToList();
     }
 }

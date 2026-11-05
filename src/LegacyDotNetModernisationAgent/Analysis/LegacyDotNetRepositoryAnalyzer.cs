@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
@@ -41,7 +42,7 @@ public sealed class LegacyDotNetRepositoryAnalyzer
 
         projects = projects.OrderBy(project => project.Path, StringComparer.Ordinal).ToList();
 
-        var sources = VbSourceLoader.Load(root, projects);
+        var sources = SourceFactLoader.Load(root, projects);
         var configs = WebConfigReader.ReadAll(root, projects);
 
         var webForms = new WebFormsAnalyzer().Analyze(root, projects, sources, configs);

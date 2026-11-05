@@ -1,6 +1,4 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.VisualBasic;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
@@ -12,122 +10,101 @@ public sealed record TypeStructure(
 /// <summary>
 /// Declares every class/interface in the estate and records which declared type refers to which.
 /// A name is resolved in the referring project first, then in the projects it references (nearest first).
-/// A name that stays ambiguous is skipped rather than guessed.
+/// A name that stays ambiguous is skipped rather than guessed. Partial declarations (a code-behind plus its
+/// designer file) are one type: the primary file is the one that is not a designer file.
 /// </summary>
 public sealed class TypeDependencyAnalyzer
 {
+    private sealed record Part(DeclaredTypeInfo Info, SourceFacts Source, TypeFact Type);
+
     public TypeStructure Analyze(
         IReadOnlyList<DotNetProjectAssessment> projects,
-        IReadOnlyList<VbSource> sources)
+        IReadOnlyList<SourceFacts> sources)
     {
-        var declared = new List<(DeclaredTypeInfo Info, VbSource Source, SyntaxNode Node)>();
+        var parts = new List<Part>();
 
         foreach (var source in sources)
         {
-            var imports = source.Root.Imports
-                .SelectMany(statement => statement.ImportsClauses)
-                .OfType<SimpleImportsClauseSyntax>()
-                .Select(clause => VbSyntax.Compact(clause.Name))
+            var imports = source.Imports
+                .Select(import => import.Name)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Order(StringComparer.Ordinal)
                 .ToList();
 
-            foreach (var node in source.Root.DescendantNodes())
+            foreach (var type in source.Types)
             {
-                var (name, kind) = node switch
-                {
-                    ClassBlockSyntax type => (type.ClassStatement.Identifier.Text, "Class"),
-                    InterfaceBlockSyntax type => (type.InterfaceStatement.Identifier.Text, "Interface"),
-                    ModuleBlockSyntax type => (type.ModuleStatement.Identifier.Text, "Module"),
-                    _ => (null, "")
-                };
-
-                if (name is null)
-                {
-                    continue;
-                }
-
-                declared.Add((new DeclaredTypeInfo($"{source.Project}/{name}", name, kind, source.Project, source.Path, VbSyntax.Line(node), imports), source, node));
+                parts.Add(new Part(
+                    new DeclaredTypeInfo($"{source.Project}/{type.Name}", type.Name, type.Kind, source.Project, source.Path, type.Line, imports),
+                    source,
+                    type));
             }
         }
 
-        var byName = declared
-            .GroupBy(item => item.Info.Name, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Select(item => item.Info).ToList(), StringComparer.OrdinalIgnoreCase);
+        // One declared type per ID; its primary part first so its evidence wins ties.
+        var merged = parts
+            .GroupBy(part => part.Info.Id, StringComparer.Ordinal)
+            .Select(group => group.OrderBy(part => IsDesignerFile(part.Source.Path)).ThenBy(part => part.Source.Path, StringComparer.Ordinal).ToList())
+            .ToList();
+
+        var byName = merged
+            .Select(group => group[0].Info)
+            .GroupBy(info => info.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
 
         var distance = ProjectDistances(projects);
         var dependencies = new Dictionary<(string From, string To), TypeDependency>();
 
-        foreach (var (info, source, node) in declared)
+        foreach (var group in merged)
         {
-            var heritage = HeritageNames(node);
+            var info = group[0].Info;
 
-            foreach (var identifier in node.DescendantNodes().Where(IsNameNode))
+            foreach (var (_, source, type) in group)
             {
-                var name = VbSyntax.SimpleName(identifier);
+                var candidates = type.Bases
+                    .SelectMany(baseType => baseType.Names.Select(name => (Name: name, Kind: baseType.Kind, Line: baseType.Line)))
+                    .Concat(source.Identifiers.Where(identifier => identifier.Type == type.Name)
+                        .Select(identifier => (identifier.Name, Kind: "Reference", identifier.Line)));
 
-                if (!byName.TryGetValue(name, out var candidates))
+                foreach (var (name, kind, line) in candidates)
                 {
-                    continue;
-                }
+                    if (!byName.TryGetValue(name, out var matches))
+                    {
+                        continue;
+                    }
 
-                var target = Resolve(info.Project, candidates, distance);
+                    var target = Resolve(info.Project, matches, distance);
 
-                if (target is null || target.Id == info.Id)
-                {
-                    continue;
-                }
+                    if (target is null || target.Id == info.Id)
+                    {
+                        continue;
+                    }
 
-                var kind = heritage.TryGetValue(identifier, out var heritageKind) ? heritageKind : "Reference";
-                var key = (info.Id, target.Id);
-                var dependency = new TypeDependency(info.Id, target.Id, kind, source.Path, VbSyntax.Line(identifier));
+                    var key = (info.Id, target.Id);
+                    var dependency = new TypeDependency(info.Id, target.Id, kind, source.Path, line);
 
-                // Keep the strongest, then the earliest, evidence for each pair.
-                if (!dependencies.TryGetValue(key, out var existing)
-                    || Rank(kind) > Rank(existing.Kind)
-                    || (Rank(kind) == Rank(existing.Kind) && dependency.Line < existing.Line))
-                {
-                    dependencies[key] = dependency;
+                    // Keep the strongest, then the earliest, evidence for each pair.
+                    if (!dependencies.TryGetValue(key, out var existing)
+                        || Rank(kind) > Rank(existing.Kind)
+                        || (Rank(kind) == Rank(existing.Kind) && existing.Location == dependency.Location && dependency.Line < existing.Line))
+                    {
+                        dependencies[key] = dependency;
+                    }
                 }
             }
         }
 
         return new TypeStructure(
-            declared.Select(item => item.Info).OrderBy(info => info.Id, StringComparer.Ordinal).ToList(),
+            merged.Select(group => group[0].Info).OrderBy(info => info.Id, StringComparer.Ordinal).ToList(),
             dependencies.Values
                 .OrderBy(dependency => dependency.From, StringComparer.Ordinal)
                 .ThenBy(dependency => dependency.To, StringComparer.Ordinal)
                 .ToList());
     }
 
-    private static bool IsNameNode(SyntaxNode node) => node is IdentifierNameSyntax or GenericNameSyntax;
+    private static bool IsDesignerFile(string path) =>
+        path.Contains(".designer.", StringComparison.OrdinalIgnoreCase);
 
     private static int Rank(string kind) => kind switch { "Inherits" => 3, "Implements" => 3, _ => 1 };
-
-    private static Dictionary<SyntaxNode, string> HeritageNames(SyntaxNode type)
-    {
-        var heritage = new Dictionary<SyntaxNode, string>();
-
-        var (inherits, implements) = type switch
-        {
-            ClassBlockSyntax block => (block.Inherits.SelectMany(statement => statement.Types), block.Implements.SelectMany(statement => statement.Types)),
-            InterfaceBlockSyntax block => (block.Inherits.SelectMany(statement => statement.Types), Enumerable.Empty<TypeSyntax>()),
-            _ => (Enumerable.Empty<TypeSyntax>(), Enumerable.Empty<TypeSyntax>())
-        };
-
-        foreach (var (types, kind) in new[] { (inherits, "Inherits"), (implements, "Implements") })
-        {
-            foreach (var typeSyntax in types)
-            {
-                foreach (var name in typeSyntax.DescendantNodesAndSelf().Where(IsNameNode))
-                {
-                    heritage[name] = kind;
-                }
-            }
-        }
-
-        return heritage;
-    }
 
     private static DeclaredTypeInfo? Resolve(
         string fromProject,

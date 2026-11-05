@@ -1,7 +1,5 @@
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.VisualBasic;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
@@ -29,7 +27,7 @@ public sealed partial class CslaAnalyzer
     private static partial Regex DataPortalHandler();
 
     public CslaAnalysisResult Analyze(
-        IReadOnlyList<VbSource> sources,
+        IReadOnlyList<SourceFacts> sources,
         IReadOnlyList<WebConfigModel> configs)
     {
         var findings = new List<LegacyTechnologyFinding>();
@@ -37,69 +35,45 @@ public sealed partial class CslaAnalyzer
 
         foreach (var source in sources)
         {
-            foreach (var import in source.Root.Imports
-                         .SelectMany(statement => statement.ImportsClauses)
-                         .OfType<SimpleImportsClauseSyntax>()
-                         .Where(clause => VbSyntax.Compact(clause.Name).StartsWith("Csla", StringComparison.OrdinalIgnoreCase)))
+            foreach (var import in source.Imports.Where(import => import.Name.StartsWith("Csla", StringComparison.OrdinalIgnoreCase)))
             {
-                findings.Add(new LegacyTechnologyFinding(Csla, $"Imports {VbSyntax.Compact(import.Name)}", source.Path, VbSyntax.Line(import)));
+                findings.Add(new LegacyTechnologyFinding(Csla, $"Imports {import.Name}", source.Path, import.Line));
             }
 
-            foreach (var type in source.Root.DescendantNodes().OfType<ClassBlockSyntax>())
+            foreach (var type in source.Types.Where(type => type.Kind == "Class"))
             {
-                var className = type.ClassStatement.Identifier.Text;
-
-                foreach (var baseType in type.Inherits.SelectMany(inherits => inherits.Types))
+                foreach (var baseType in type.Bases.Where(baseType => baseType.Kind == "Inherits"))
                 {
-                    var name = VbSyntax.SimpleName(baseType);
-                    var qualifiedCsla = VbSyntax.Compact(baseType).StartsWith("Csla.", StringComparison.OrdinalIgnoreCase);
+                    var qualifiedCsla = baseType.Compact.StartsWith("Csla.", StringComparison.OrdinalIgnoreCase);
 
-                    if (!qualifiedCsla && !BusinessBaseTypes.Any(known => VbSyntax.Is(known, name)))
+                    if (!qualifiedCsla && !BusinessBaseTypes.Any(known => string.Equals(known, baseType.SimpleName, StringComparison.OrdinalIgnoreCase)))
                     {
                         continue;
                     }
 
-                    usedTypes.Add(name);
+                    usedTypes.Add(baseType.SimpleName);
 
-                    findings.Add(new LegacyTechnologyFinding(
-                        Csla,
-                        $"Inherits {VbSyntax.Text(baseType)}",
-                        source.Path,
-                        VbSyntax.Line(baseType),
-                        className));
+                    findings.Add(new LegacyTechnologyFinding(Csla, $"Inherits {baseType.Display}", source.Path, baseType.Line, type.Name));
                 }
 
-                foreach (var method in type.Members.OfType<MethodBlockSyntax>())
+                foreach (var method in type.Methods.Where(method => DataPortalHandler().IsMatch(method.Name)))
                 {
-                    var name = method.SubOrFunctionStatement.Identifier.Text;
-
-                    if (DataPortalHandler().IsMatch(name))
-                    {
-                        findings.Add(new LegacyTechnologyFinding(CslaDataPortal, name, source.Path, VbSyntax.Line(method), className));
-                    }
+                    findings.Add(new LegacyTechnologyFinding(CslaDataPortal, method.Name, source.Path, method.StartLine, type.Name));
                 }
             }
 
-            foreach (var invocation in source.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            foreach (var call in source.Invocations.Where(call =>
+                         string.Equals(call.Qualifier, "DataPortal", StringComparison.OrdinalIgnoreCase)
+                         && DataPortalOperations.Any(operation => string.Equals(operation, call.CalleeName, StringComparison.OrdinalIgnoreCase))))
             {
-                if (invocation.Expression is not MemberAccessExpressionSyntax member
-                    || !VbSyntax.Is(VbSyntax.SimpleName(member.Expression), "DataPortal")
-                    || !DataPortalOperations.Any(operation => VbSyntax.Is(operation, member.Name.Identifier.Text)))
-                {
-                    continue;
-                }
-
                 usedTypes.Add("DataPortal");
-
-                var businessType = VbSyntax.FirstTypeArgument(member.Name);
-                var evidence = $"DataPortal.{member.Name.Identifier.Text}" + (businessType is null ? "" : $"(Of {businessType})");
 
                 findings.Add(new LegacyTechnologyFinding(
                     CslaDataPortal,
-                    evidence,
+                    $"DataPortal.{call.CalleeName}{call.TypeArgumentDisplay}",
                     source.Path,
-                    VbSyntax.Line(invocation),
-                    VbSyntax.EnclosingClass(invocation)));
+                    call.Line,
+                    call.Type));
             }
         }
 

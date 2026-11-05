@@ -1,13 +1,11 @@
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.VisualBasic;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
 
 /// <summary>
-/// Detects ASP.NET Web Forms / System.Web coupling from markup, VB code-behind and Web.config.
+/// Detects ASP.NET Web Forms / System.Web coupling from markup, code-behind (VB.NET or C#) and Web.config.
 /// Every finding is evidence (what, where, which line); interpretation is left to policy and the Strategy Agent.
 /// </summary>
 public sealed partial class WebFormsAnalyzer
@@ -40,7 +38,7 @@ public sealed partial class WebFormsAnalyzer
     public IReadOnlyList<LegacyTechnologyFinding> Analyze(
         string repositoryRoot,
         IReadOnlyList<DotNetProjectAssessment> projects,
-        IReadOnlyList<VbSource> sources,
+        IReadOnlyList<SourceFacts> sources,
         IReadOnlyList<WebConfigModel> configs)
     {
         var findings = new List<LegacyTechnologyFinding>();
@@ -117,92 +115,76 @@ public sealed partial class WebFormsAnalyzer
         }
     }
 
-    private static void AnalyzeCode(VbSource source, List<LegacyTechnologyFinding> findings)
+    private static void AnalyzeCode(SourceFacts source, List<LegacyTechnologyFinding> findings)
     {
-        foreach (var import in source.Root.Imports
-                     .SelectMany(statement => statement.ImportsClauses)
-                     .OfType<SimpleImportsClauseSyntax>()
-                     .Where(clause => VbSyntax.Compact(clause.Name).StartsWith("System.Web", StringComparison.OrdinalIgnoreCase)))
+        foreach (var import in source.Imports.Where(import => import.Name.StartsWith("System.Web", StringComparison.OrdinalIgnoreCase)))
         {
-            findings.Add(new LegacyTechnologyFinding(SystemWeb, $"Imports {VbSyntax.Compact(import.Name)}", source.Path, VbSyntax.Line(import)));
+            findings.Add(new LegacyTechnologyFinding(SystemWeb, $"Imports {import.Name}", source.Path, import.Line));
         }
 
-        foreach (var type in source.Root.DescendantNodes().OfType<ClassBlockSyntax>())
+        foreach (var type in source.Types.Where(type => type.Kind == "Class"))
         {
-            var webBase = type.Inherits
-                .SelectMany(inherits => inherits.Types)
-                .FirstOrDefault(baseType =>
-                    WebBaseTypes.Any(name => VbSyntax.Is(VbSyntax.SimpleName(baseType), name))
-                    && (VbSyntax.Compact(baseType).StartsWith("System.Web.UI.", StringComparison.OrdinalIgnoreCase)
-                        || source.Path.EndsWith(".aspx.vb", StringComparison.OrdinalIgnoreCase)
-                        || source.Path.EndsWith(".ascx.vb", StringComparison.OrdinalIgnoreCase)
-                        || source.Path.EndsWith(".master.vb", StringComparison.OrdinalIgnoreCase)));
+            var webBase = type.Bases.FirstOrDefault(baseType =>
+                baseType.Kind == "Inherits"
+                && WebBaseTypes.Any(name => Is(baseType.SimpleName, name))
+                && (baseType.Compact.StartsWith("System.Web.UI.", StringComparison.OrdinalIgnoreCase)
+                    || source.IsCodeBehind("aspx", "ascx", "master")));
 
             var isWebClass = webBase is not null;
-            var className = type.ClassStatement.Identifier.Text;
 
             if (webBase is not null)
             {
-                findings.Add(new LegacyTechnologyFinding(WebForms, $"Inherits {VbSyntax.Text(webBase)}", source.Path, VbSyntax.Line(webBase), className));
+                findings.Add(new LegacyTechnologyFinding(WebForms, $"Inherits {webBase.Display}", source.Path, webBase.Line, type.Name));
             }
 
-            foreach (var node in type.DescendantNodes())
+            foreach (var method in type.Methods)
             {
-                switch (node)
+                if (LifecycleMethod().IsMatch(method.Name))
                 {
-                    case MethodBlockSyntax method:
-                        {
-                            var name = method.SubOrFunctionStatement.Identifier.Text;
+                    findings.Add(new LegacyTechnologyFinding(PageLifecycle, method.Name, source.Path, method.StartLine, type.Name));
+                }
+                else if (GlobalAsaxHandler().IsMatch(method.Name) && source.IsCodeBehind("asax"))
+                {
+                    findings.Add(new LegacyTechnologyFinding(GlobalAsax, method.Name, source.Path, method.StartLine, type.Name));
+                }
+            }
 
-                            if (LifecycleMethod().IsMatch(name))
-                            {
-                                findings.Add(new LegacyTechnologyFinding(PageLifecycle, name, source.Path, VbSyntax.Line(method), className));
-                            }
-                            else if (GlobalAsaxHandler().IsMatch(name) && source.Path.EndsWith(".asax.vb", StringComparison.OrdinalIgnoreCase))
-                            {
-                                findings.Add(new LegacyTechnologyFinding(GlobalAsax, name, source.Path, VbSyntax.Line(method), className));
-                            }
+            if (isWebClass)
+            {
+                foreach (var identifier in source.Identifiers.Where(id => id.Type == type.Name && Is(id.Name, "IsPostBack")))
+                {
+                    findings.Add(new LegacyTechnologyFinding(PageLifecycle, "IsPostBack", source.Path, identifier.Line, type.Name));
+                }
+            }
 
-                            break;
-                        }
+            foreach (var access in source.Invocations.Where(call => call.Type == type.Name && Is(call.CalleeText, "Session")))
+            {
+                var key = access.FirstString ?? "?";
 
-                    case IdentifierNameSyntax identifier when isWebClass && VbSyntax.Is(identifier.Identifier.Text, "IsPostBack"):
-                        findings.Add(new LegacyTechnologyFinding(PageLifecycle, "IsPostBack", source.Path, VbSyntax.Line(identifier), className));
-                        break;
+                findings.Add(new LegacyTechnologyFinding(
+                    Session,
+                    $"Session(\"{key}\") {(access.IsAssignmentTarget ? "write" : "read")}",
+                    source.Path,
+                    access.Line,
+                    type.Name));
+            }
 
-                    case InvocationExpressionSyntax invocation
-                        when invocation.Expression is IdentifierNameSyntax { Identifier.Text: var sessionName }
-                             && VbSyntax.Is(sessionName, "Session"):
-                        {
-                            var key = VbSyntax.FirstStringArgument(invocation) ?? "?";
-                            var access = invocation.Parent is AssignmentStatementSyntax assignment && assignment.Left == invocation
-                                ? "write" : "read";
-
-                            findings.Add(new LegacyTechnologyFinding(Session, $"Session(\"{key}\") {access}", source.Path, VbSyntax.Line(invocation), className));
-                            break;
-                        }
-
-                    case MemberAccessExpressionSyntax member:
-                        {
-                            var left = VbSyntax.SimpleName(member.Expression);
-                            var right = member.Name.Identifier.Text;
-
-                            if (VbSyntax.Is(left, "HttpContext") && VbSyntax.Is(right, "Current"))
-                            {
-                                findings.Add(new LegacyTechnologyFinding(SystemWeb, "HttpContext.Current", source.Path, VbSyntax.Line(member), className));
-                            }
-                            else if (isWebClass && member.Expression is IdentifierNameSyntax
-                                     && (VbSyntax.Is(left, "Request") || VbSyntax.Is(left, "Response") || VbSyntax.Is(left, "Server")))
-                            {
-                                findings.Add(new LegacyTechnologyFinding(SystemWeb, $"{left}.{right}", source.Path, VbSyntax.Line(member), className));
-                            }
-
-                            break;
-                        }
+            foreach (var member in source.MemberAccesses.Where(access => access.Type == type.Name))
+            {
+                if (Is(member.Qualifier, "HttpContext") && Is(member.Member, "Current"))
+                {
+                    findings.Add(new LegacyTechnologyFinding(SystemWeb, "HttpContext.Current", source.Path, member.Line, type.Name));
+                }
+                else if (isWebClass && member.QualifierIsPlainName
+                         && (Is(member.Qualifier, "Request") || Is(member.Qualifier, "Response") || Is(member.Qualifier, "Server")))
+                {
+                    findings.Add(new LegacyTechnologyFinding(SystemWeb, $"{member.Qualifier}.{member.Member}", source.Path, member.Line, type.Name));
                 }
             }
         }
     }
+
+    private static bool Is(string? left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
     private static int LineOf(string text, int index)
     {

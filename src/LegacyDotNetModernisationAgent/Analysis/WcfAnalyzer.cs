@@ -1,7 +1,5 @@
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.VisualBasic;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LegacyDotNetModernisationAgent.Analysis.Facts;
 using LegacyDotNetModernisationAgent.Models;
 
 namespace LegacyDotNetModernisationAgent.Analysis;
@@ -21,13 +19,14 @@ public sealed partial class WcfAnalyzer
     [GeneratedRegex(@"<%@\s*ServiceHost\b[^%]*\bService\s*=\s*""(?<service>[^""]*)""", RegexOptions.IgnoreCase)]
     private static partial Regex ServiceHostDirective();
 
-    [GeneratedRegex(@"^GetType\((?<type>.+)\)$", RegexOptions.IgnoreCase)]
-    private static partial Regex GetTypeText();
+    // VB writes GetType(X); C# writes typeof(X).
+    [GeneratedRegex(@"^(?:GetType|typeof)\((?<type>.+)\)$", RegexOptions.IgnoreCase)]
+    private static partial Regex TypeOfText();
 
     public WcfAnalysisResult Analyze(
         string repositoryRoot,
         IReadOnlyList<DotNetProjectAssessment> projects,
-        IReadOnlyList<VbSource> sources,
+        IReadOnlyList<SourceFacts> sources,
         IReadOnlyList<WebConfigModel> configs)
     {
         var findings = new List<LegacyTechnologyFinding>();
@@ -38,45 +37,37 @@ public sealed partial class WcfAnalyzer
 
         foreach (var source in sources)
         {
-            foreach (var contract in source.Root.DescendantNodes().OfType<InterfaceBlockSyntax>()
-                         .Where(node => HasAttribute(node.InterfaceStatement.AttributeLists, "ServiceContract")))
+            foreach (var contract in source.Types.Where(type => type.Kind == "Interface" && HasAttribute(type.Attributes, "ServiceContract")))
             {
-                var name = contract.InterfaceStatement.Identifier.Text;
-
-                var operations = contract.Members.OfType<MethodStatementSyntax>()
-                    .Where(method => HasAttribute(method.AttributeLists, "OperationContract"))
-                    .Select(method => new WcfOperationInfo(method.Identifier.Text, FaultTypes(method.AttributeLists)))
+                var operations = contract.Methods
+                    .Where(method => HasAttribute(method.Attributes, "OperationContract"))
+                    .Select(method => new WcfOperationInfo(method.Name, FaultTypes(method.Attributes)))
                     .OrderBy(operation => operation.Name, StringComparer.Ordinal)
                     .ToList();
 
-                contracts.Add(new WcfContractInfo(name, operations, source.Path, VbSyntax.Line(contract)));
-                findings.Add(new LegacyTechnologyFinding(Wcf, "ServiceContract", source.Path, VbSyntax.Line(contract), name));
+                contracts.Add(new WcfContractInfo(contract.Name, operations, source.Path, contract.Line));
+                findings.Add(new LegacyTechnologyFinding(Wcf, "ServiceContract", source.Path, contract.Line, contract.Name));
 
                 foreach (var operation in operations)
                 {
-                    findings.Add(new LegacyTechnologyFinding(Wcf, $"OperationContract {operation.Name}", source.Path, VbSyntax.Line(contract), name));
+                    findings.Add(new LegacyTechnologyFinding(Wcf, $"OperationContract {operation.Name}", source.Path, contract.Line, contract.Name));
                 }
             }
 
-            foreach (var type in source.Root.DescendantNodes().OfType<ClassBlockSyntax>())
-            {
-                if (HasAttribute(type.ClassStatement.AttributeLists, "DataContract"))
-                {
-                    dataContracts.Add(type.ClassStatement.Identifier.Text);
-                }
-            }
+            dataContracts.AddRange(source.Types
+                .Where(type => type.Kind == "Class" && HasAttribute(type.Attributes, "DataContract"))
+                .Select(type => type.Name));
         }
 
         var contractNames = contracts.Select(contract => contract.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var source in sources)
         {
-            foreach (var type in source.Root.DescendantNodes().OfType<ClassBlockSyntax>())
+            foreach (var type in source.Types.Where(type => type.Kind == "Class"))
             {
-                var implemented = type.Implements
-                    .SelectMany(statement => statement.Types)
-                    .Select(VbSyntax.SimpleName)
-                    .Where(contractNames.Contains)
+                var implemented = type.Bases
+                    .Where(baseType => baseType.Kind == "Implements" && contractNames.Contains(baseType.SimpleName))
+                    .Select(baseType => baseType.SimpleName)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Order(StringComparer.Ordinal)
                     .ToList();
@@ -86,40 +77,37 @@ public sealed partial class WcfAnalyzer
                     continue;
                 }
 
-                var name = type.ClassStatement.Identifier.Text;
-
-                services.Add(new WcfServiceInfo(name, implemented, source.Path, VbSyntax.Line(type)));
-                findings.Add(new LegacyTechnologyFinding(Wcf, $"Implements {string.Join(", ", implemented)}", source.Path, VbSyntax.Line(type), name));
+                services.Add(new WcfServiceInfo(type.Name, implemented, source.Path, type.Line));
+                findings.Add(new LegacyTechnologyFinding(Wcf, $"Implements {string.Join(", ", implemented)}", source.Path, type.Line, type.Name));
             }
 
-            foreach (var creation in source.Root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+            foreach (var creation in source.Creations.Where(creation => string.Equals(creation.TypeName, "ChannelFactory", StringComparison.OrdinalIgnoreCase)))
             {
-                if (!VbSyntax.Is(VbSyntax.SimpleName(creation.Type), "ChannelFactory"))
-                {
-                    continue;
-                }
+                // Same method if there is one; otherwise just the creation's own line.
+                bool InScope(int line, string? type, string? method) =>
+                    creation.Method is not null ? type == creation.Type && method == creation.Method : line == creation.Line;
 
-                var method = creation.Ancestors().OfType<MethodBlockSyntax>().FirstOrDefault();
-                var scope = (SyntaxNode?)method ?? creation;
-
-                var binding = scope.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
-                    .Select(node => VbSyntax.SimpleName(node.Type))
+                var binding = source.Creations
+                    .Where(other => InScope(other.Line, other.Type, other.Method))
+                    .Select(other => other.TypeName)
                     .FirstOrDefault(typeName => typeName.EndsWith("Binding", StringComparison.OrdinalIgnoreCase));
 
-                var addressKey = scope.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                    .Where(invocation => VbSyntax.Is(VbSyntax.Compact(invocation.Expression), "ConfigurationManager.AppSettings"))
-                    .Select(VbSyntax.FirstStringArgument)
-                    .FirstOrDefault(key => key is not null);
+                var addressKey = source.Invocations
+                    .Where(call => InScope(call.Line, call.Type, call.Method)
+                                   && string.Equals(call.CalleeText, "ConfigurationManager.AppSettings", StringComparison.OrdinalIgnoreCase)
+                                   && call.FirstString is not null)
+                    .Select(call => call.FirstString)
+                    .FirstOrDefault();
 
-                var contract = VbSyntax.FirstTypeArgument(creation.Type) ?? "?";
-                var className = VbSyntax.EnclosingClass(creation) ?? "?";
+                var contract = creation.TypeArgument ?? "?";
+                var className = creation.Type ?? "?";
 
-                clients.Add(new WcfClientUsage(contract, binding, addressKey, className, source.Path, VbSyntax.Line(creation)));
+                clients.Add(new WcfClientUsage(contract, binding, addressKey, className, source.Path, creation.Line));
                 findings.Add(new LegacyTechnologyFinding(
                     Wcf,
                     $"ChannelFactory(Of {contract}) binding={binding ?? "?"} address=appSettings[{addressKey ?? "?"}]",
                     source.Path,
-                    VbSyntax.Line(creation),
+                    creation.Line,
                     className));
             }
         }
@@ -165,16 +153,16 @@ public sealed partial class WcfAnalyzer
         return new WcfAnalysisResult(assessment, findings);
     }
 
-    private static bool HasAttribute(SyntaxList<AttributeListSyntax> lists, string name) =>
-        lists.SelectMany(list => list.Attributes).Any(attribute => VbSyntax.Is(VbSyntax.SimpleName(attribute.Name), name)
-            || VbSyntax.Is(VbSyntax.SimpleName(attribute.Name), name + "Attribute"));
+    private static bool HasAttribute(IReadOnlyList<AttributeFact> attributes, string name) =>
+        attributes.Any(attribute => string.Equals(attribute.Name, name, StringComparison.OrdinalIgnoreCase)
+                                 || string.Equals(attribute.Name, name + "Attribute", StringComparison.OrdinalIgnoreCase));
 
-    private static IReadOnlyList<string> FaultTypes(SyntaxList<AttributeListSyntax> lists) =>
-        lists.SelectMany(list => list.Attributes)
-            .Where(attribute => VbSyntax.Is(VbSyntax.SimpleName(attribute.Name), "FaultContract"))
-            .Select(attribute => attribute.ArgumentList?.Arguments.FirstOrDefault())
-            .OfType<SimpleArgumentSyntax>()
-            .Select(argument => GetTypeText().Match(VbSyntax.Compact(argument.Expression)))
+    private static IReadOnlyList<string> FaultTypes(IReadOnlyList<AttributeFact> attributes) =>
+        attributes
+            .Where(attribute => string.Equals(attribute.Name, "FaultContract", StringComparison.OrdinalIgnoreCase))
+            .Select(attribute => attribute.Arguments.FirstOrDefault())
+            .Where(argument => argument is not null)
+            .Select(argument => TypeOfText().Match(argument!))
             .Where(match => match.Success)
             .Select(match => match.Groups["type"].Value)
             .Order(StringComparer.Ordinal)
