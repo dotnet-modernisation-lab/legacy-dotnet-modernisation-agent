@@ -165,9 +165,9 @@ public static class CustomerSummaryWriter
     }
 
     /// <summary>The kind is shown under the name, except for the special areas whose name already says what they are.</summary>
-    private static bool ShowKind(SummaryArea area) => area.Kind is not (DeployableUnits.DataSourceKind or DeployableUnits.SharedKind or DeployableUnits.NotPlacedKind);
+    internal static bool ShowKind(SummaryArea area) => area.Kind is not (DeployableUnits.DataSourceKind or DeployableUnits.SharedKind or DeployableUnits.NotPlacedKind);
 
-    private static string Detail(SummaryArea area, string separator)
+    internal static string Detail(SummaryArea area, string separator)
     {
         var parts = new List<string>();
 
@@ -225,7 +225,7 @@ public static class CustomerSummaryWriter
 
     private static Run Run(string text, int size, bool bold, string colour, bool italic = false)
     {
-        var properties = new RunProperties(new RunFonts { Ascii = "Calibri", HighAnsi = "Calibri" }, new Color { Val = colour }, new FontSize { Val = size.ToString() });
+        var properties = new RunProperties(new RunFonts { Ascii = "Calibri", HighAnsi = "Calibri" });
 
         if (bold)
         {
@@ -236,6 +236,8 @@ public static class CustomerSummaryWriter
         {
             properties.Append(new Italic());
         }
+
+        properties.Append(new Color { Val = colour }, new FontSize { Val = size.ToString() });
 
         var run = new Run(properties);
         var lines = text.Split('\n');
@@ -257,19 +259,23 @@ public static class CustomerSummaryWriter
     {
         var table = new Table(new TableProperties(
             new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct },
-            new TableLayout { Type = TableLayoutValues.Fixed },
             new TableBorders(
                 new TopBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
-                new BottomBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
                 new LeftBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
+                new BottomBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
                 new RightBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
                 new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" },
                 new InsideVerticalBorder { Val = BorderValues.Single, Size = 4, Color = "C8D3E0" }),
+            new TableLayout { Type = TableLayoutValues.Fixed },
             new TableCellMarginDefault(
                 new TopMargin { Width = "50", Type = TableWidthUnitValues.Dxa },
                 new LeftMargin { Width = "90", Type = TableWidthUnitValues.Dxa },
                 new BottomMargin { Width = "50", Type = TableWidthUnitValues.Dxa },
                 new RightMargin { Width = "90", Type = TableWidthUnitValues.Dxa })));
+
+        const int PageTextWidth = 9864;
+
+        table.Append(new TableGrid(widths.Select(width => new GridColumn { Width = (width * PageTextWidth / 100).ToString() })));
 
         var header = new TableRow(new TableRowProperties(new TableHeader(), new CantSplit()));
 

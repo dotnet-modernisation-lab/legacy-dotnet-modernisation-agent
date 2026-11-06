@@ -223,7 +223,7 @@ public static class CustomerSummaryBuilder
     }
 
     /// <summary>The project name inside brackets: "Website (X)" shows as "X"; names without brackets are unchanged.</summary>
-    private static string DisplayName(string name)
+    internal static string DisplayName(string name)
     {
         if (name == DeployableUnits.SharedName)
         {
@@ -240,7 +240,7 @@ public static class CustomerSummaryBuilder
         return open > 0 && name.EndsWith(')') ? name[(open + 2)..^1] : name;
     }
 
-    private static string DisplayKind(string kind) => kind switch
+    internal static string DisplayKind(string kind) => kind switch
     {
         DeployableUnits.DataSourceKind => "data source",
         DeployableUnits.SharedKind => "shared code",

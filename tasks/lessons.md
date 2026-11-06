@@ -12,3 +12,7 @@
 - Correction: the user questioned whether any generic crawl of a legacy app can work, since it all calls onward to databases, services and sign-in. They were right.
 - Rule: derive behaviour from code (entry points, call paths, data, access) first. Run something only where a machine-readable contract exists (service descriptions) or where a person supplies the scenario. Do not propose a crawl or probe as the generic answer.
 - Rule: a name match is not a resolution. Follow a call only when the calling code can reach the target; say why when it stops.
+
+## Validate generated Word files against the schema
+- Found: helper code produced run properties and table borders in the wrong order and tables without a column grid. The files opened in tools that tolerate it, but Word can reject or repair them.
+- Rule: after changing any Word writer, validate every generated .docx with the OpenXML validator (0 issues) as well as comparing word/document.xml across runs.
