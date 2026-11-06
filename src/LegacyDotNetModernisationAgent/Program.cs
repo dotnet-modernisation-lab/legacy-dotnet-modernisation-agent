@@ -3,11 +3,10 @@ using LegacyDotNetModernisationAgent.Commands;
 const string Usage = """
     Usage:
       assess <repositoryPath> [artifactsDirectory]            facts, graph and migration analysis
-      behave <repositoryPath> [artifactsDirectory] [--verify] record (or re-check) the behaviour baseline;
-                                                              needs the solution built and IIS Express installed
       strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|foundry|file:<strategy.json>]
                                                               evidence bundle, strategy, validation, Markdown and Word report
       diagram <repositoryPath> [artifactsDirectory]           architecture overview (SVG, Mermaid) and a detail view per area
+      flows <repositoryPath> [artifactsDirectory]             what each entry point does, read from the code (flows.json, flows.md)
       offering <markdownPath> [output.docx]                  Word version of the sales offering Markdown
       summary <repositoryPath> [artifactsDirectory]           customer summary (Word, Markdown) in plain language, with the overview diagram
     """;
@@ -20,11 +19,10 @@ Console.CancelKeyPress += (_, eventArgs) =>
     cancellationTokenSource.Cancel();
 };
 
-var verify = args.Contains("--verify", StringComparer.OrdinalIgnoreCase);
 var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
 var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
 
-if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy" or "diagram" or "summary" or "offering"))
+if (positional.Length < 2 || command is not ("assess" or "strategy" or "diagram" or "summary" or "offering" or "flows"))
 {
     Console.Error.WriteLine(Usage);
 
@@ -40,6 +38,11 @@ try
         await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
 
         return 0;
+    }
+
+    if (command == "flows")
+    {
+        return await new FlowsCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
     }
 
     if (command == "offering")
@@ -68,7 +71,7 @@ try
         return await new StrategyCommand().ExecuteAsync(positional[1], artifacts, modelOption is null ? "deterministic" : modelOption["--model=".Length..], cancellationTokenSource.Token);
     }
 
-    return await new BehaviourCommand().ExecuteAsync(positional[1], artifacts, verify, cancellationTokenSource.Token);
+    return 2;
 }
 catch (OperationCanceledException)
 {

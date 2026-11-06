@@ -112,7 +112,8 @@ public static class VbFactExtractor
             EndLine(block),
             isPublic,
             (statement.AsClause as SimpleAsClauseSyntax)?.Type.ToString().Trim() ?? "(none)",
-            Attributes(statement.AttributeLists));
+            Attributes(statement.AttributeLists),
+            statement.HandlesClause?.Events.Select(item => Compact(item)).ToList() ?? []);
     }
 
     private static IEnumerable<BaseFact> Bases(IEnumerable<TypeSyntax> types, string kind) =>

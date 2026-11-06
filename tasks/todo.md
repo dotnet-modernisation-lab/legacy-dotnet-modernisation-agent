@@ -75,10 +75,18 @@ Principle: the tool will be run against legacy code bases we have not seen. **An
 
 ## H. Generic behaviour probe (replaces the sample-specific probe)
 Sources of behaviour, in order of build:
-- [ ] H1. Static contracts per element from the analysis: per page (declared access), per WCF service (operations), every stored procedure, session keys, declared access (already generic)
+- [~] H1. (superseded by flows, see docs/flow-contract-design.md) Static contracts per element from the analysis: per page (declared access), per WCF service (operations), every stored procedure, session keys, declared access (already generic)
 - [ ] H2. Generic anonymous crawl: host every web project and WCF host found; GET only each discovered page and service description; record status, redirect, title, form fields, table ids and row counts, WSDL operations; run twice and mark keys that differ between runs as unstable; strip ASP.NET hidden fields
 - [ ] H3. Scenario file interpreter (get, postback, extractText, extractRows, stopHost); sample's checks move to docs/examples/legacy-webforms-migration/behaviour-scenarios.json; no file means the output says so
 - [ ] H4. Replace throws in target resolution with coverage notes; match each WCF host to its port via the client with the same contract; readiness probe on a discovered service; ProbeName http-iisexpress/2
 - [ ] H5. README wording; sweep of src/ for the sample's names returns zero
 - Proof: sample with the scenario file reproduces every old observation value; planted fixture with different names and no web app or host reports what it could not exercise; repeat runs identical except unstable keys
 - Roadmap: record and replay a real session (HAR/Fiddler), IIS log usage ranking, existing UI or test suites, stored-procedure characterisation against a test database
+
+### H status (flows first cut)
+- [x] Flow extractor (`flows`): entry points from evidence, calls followed by name, terminals per method, gaps listed; markup event wiring and VB Handles read; hosted background entry points
+- [x] Old sample-specific probe deleted; its checks kept as data in docs/examples/legacy-webforms-migration/behaviour-scenarios.json
+- [x] Proof: planted fixture (docs/fixtures/flows-planted), sample flows reviewed, identical across runs, sweep of src/ for the sample's names is empty, diagram and summary outputs unchanged, fixture with no web app or service reports no entry points plainly
+- [ ] H2. Service-description (WSDL) comparison
+- [ ] H3. Scenario file interpreter
+- [ ] Comparison against migrated code (later); timers and thread-started work as entry points; method parameters as inputs; overload-level precision

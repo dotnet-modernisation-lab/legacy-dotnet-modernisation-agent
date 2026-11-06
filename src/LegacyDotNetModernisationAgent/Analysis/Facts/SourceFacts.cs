@@ -20,13 +20,15 @@ public sealed record BaseFact(
     int Line,
     string Kind);
 
+/// <summary>Handles lists the events a VB method is declared to handle (for example "SaveButton.Click"); C# wires handlers elsewhere, so it is empty there.</summary>
 public sealed record MethodFact(
     string Name,
     int StartLine,
     int EndLine,
     bool IsPublic,
     string ReturnType,
-    IReadOnlyList<AttributeFact> Attributes);
+    IReadOnlyList<AttributeFact> Attributes,
+    IReadOnlyList<string>? Handles = null);
 
 public sealed record TypeFact(
     string Name,

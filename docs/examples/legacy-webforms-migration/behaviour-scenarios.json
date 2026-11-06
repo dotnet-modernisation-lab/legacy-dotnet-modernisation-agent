@@ -1,0 +1,68 @@
+{
+  "note": "Checks for the sample estate only, kept as data. They were the tool's former built-in probe. A scenario interpreter that reads this format is not built yet (tasks/todo.md H3), so nothing runs this file today. Nothing in src/ names this application.",
+  "estate": "legacy-webforms-migration",
+  "hosting": {
+    "web": { "project": "LegacyWebFormsSample", "run": "IIS Express" },
+    "service": { "project": "LegacyDataServiceHost", "run": "IIS Express", "readyPath": "LegacyCustomerService.svc?wsdl" }
+  },
+  "scenarios": [
+    {
+      "id": "service-description",
+      "steps": [
+        { "on": "service", "get": "LegacyCustomerService.svc?wsdl", "record": { "status": "status", "exposesContract": { "bodyContains": "ILegacyCustomerService" } } }
+      ]
+    },
+    {
+      "id": "anonymous-access",
+      "session": "anonymous",
+      "steps": [
+        { "on": "web", "get": "Pages/DataAccess.aspx?customerId=1042", "record": { "status": "status", "redirect": "redirect" } }
+      ]
+    },
+    {
+      "id": "sign-in",
+      "session": "admin",
+      "steps": [
+        { "on": "web", "get": "Pages/Login.aspx", "record": { "initialMessage": { "textOfIdEndingWith": "MessageLabel" } } },
+        { "postback": "Pages/Login.aspx", "fields": { "*UserNameTextBox": "", "*LoginButton": "Login" }, "record": { "emptyUserMessage": { "textOfIdEndingWith": "MessageLabel" } } },
+        { "postback": "Pages/Login.aspx", "fields": { "*UserNameTextBox": "admin", "*LoginButton": "Login" }, "record": { "status": "status", "redirect": "redirect" } }
+      ]
+    },
+    {
+      "id": "customer-lookup",
+      "session": "admin",
+      "steps": [
+        { "foreach": ["?customerId=1042", "", "?customerId=9999", "?customerId=-5", "?customerId=0", "?customerId=abc"],
+          "get": "Pages/DataAccess.aspx{item}",
+          "record": { "status": "status", "message": { "textOfIdEndingWith": "StatusLabel" }, "rows": { "tableRowsOfIdEndingWith": "CustomerGrid" } } },
+        { "postback": "Pages/DataAccess.aspx?customerId=1042", "fields": {}, "record": { "status": "status", "message": { "textOfIdEndingWith": "StatusLabel" }, "rows": { "tableRowsOfIdEndingWith": "CustomerGrid" } } }
+      ],
+      "expect": { "customerId=1042 rows": "Northwind Field Services, status Active", "customerId=9999": "generic data portal failure (legacy behaviour)", "customerId=-5, 0, abc": "rejected by the page" }
+    },
+    {
+      "id": "session-values",
+      "session": "admin",
+      "steps": [
+        { "on": "web", "get": "Pages/Profile.aspx", "record": { "status": "status", "message": { "textOfIdEndingWith": "SessionLabel" } } }
+      ]
+    },
+    {
+      "id": "non-admin-denied",
+      "session": "non-admin",
+      "steps": [
+        { "on": "web", "get": "Pages/Login.aspx" },
+        { "postback": "Pages/Login.aspx", "fields": { "*UserNameTextBox": "alice", "*LoginButton": "Login" } },
+        { "on": "web", "get": "Pages/DataAccess.aspx?customerId=1042", "record": { "status": "status", "message": { "textOfIdEndingWith": "StatusLabel" }, "rows": { "tableRowsOfIdEndingWith": "CustomerGrid" } } }
+      ]
+    },
+    {
+      "id": "service-boundary",
+      "session": "admin",
+      "steps": [
+        { "stopHost": "service" },
+        { "on": "web", "get": "Pages/DataAccess.aspx?customerId=1042", "record": { "status": "status", "message": { "textOfIdEndingWith": "StatusLabel" }, "rows": { "tableRowsOfIdEndingWith": "CustomerGrid" } } }
+      ],
+      "expect": { "rows": "none, so the page cannot read the data itself" }
+    }
+  ]
+}

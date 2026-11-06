@@ -1,0 +1,12 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType><AssemblyName>Shop.Web</AssemblyName><TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+  </PropertyGroup>
+  <ItemGroup><Reference Include="System.Web" /></ItemGroup>
+  <ItemGroup>
+    <Content Include="Orders.aspx" />
+    <Compile Include="Orders.aspx.cs" />
+    <ProjectReference Include="..\Shop.Logic\Shop.Logic.csproj" />
+  </ItemGroup>
+</Project>

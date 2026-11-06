@@ -1,0 +1,5 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup><OutputType>Library</OutputType><AssemblyName>Shop.Logic</AssemblyName><TargetFrameworkVersion>v4.8</TargetFrameworkVersion></PropertyGroup>
+  <ItemGroup><Reference Include="System.Data" /></ItemGroup>
+  <ItemGroup><Compile Include="Logic.cs" /></ItemGroup>
+</Project>

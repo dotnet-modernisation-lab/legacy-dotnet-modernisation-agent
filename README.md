@@ -13,7 +13,7 @@ Reference sample: `legacy-webforms-migration`. Plan: `docs/assessment-prototype-
 | B. Repository inventory (solution, old-style projects, packages.config, references, framework/language) | done |
 | C. Technology analysers (Web Forms, CSLA source, assembly, WCF, DAL/stored procedures) | done |
 | D. Architectural graph, layer boundaries, impact, migration characteristics | done |
-| E. Behaviour contracts and probe (`behave`, baseline, `--verify`) | done |
+| E. Flow contracts (`flows`): what each entry point does, read from the code | first cut done (replaces the sample-specific probe) |
 | Authentication and authorization detection, access rules, decision gate | done |
 | F. Strategy: evidence bundle, validator, replay and deterministic strategy, Markdown and Word report | done (no model yet) |
 | F. Model-backed Strategy Agent | next (needs a model decision) |
@@ -33,14 +33,18 @@ Writes, deterministically (byte-identical across runs):
 - `Artifacts/migration-analysis.json`: migration characteristics per component (rule ID, reason, evidence), human decision gates, potentially portable areas
 
 ```text
-dotnet run --project src/LegacyDotNetModernisationAgent -- behave <repositoryPath> [artifactsDirectory] [--verify]
+dotnet run --project src/LegacyDotNetModernisationAgent -- flows <repositoryPath> [artifactsDirectory]
 ```
 
-`behave` starts the built legacy app under IIS Express, drives it like a browser (sign-in, customers, postbacks, Session,
-access control, and a stopped-WCF-host boundary test), and records the observations as named contracts in
-`Artifacts/behaviour-baseline.json`. `--verify` re-runs the probe and reports any difference from the saved baseline.
-The solution must already be built. The probe stops only the processes it started and never builds or edits the repository.
-Nothing in the legacy solution changes and no test project is needed.
+`flows` reads what each entry point of the application does, from the code, and writes `flows.json` and `flows.md`.
+Entry points are found from evidence (markup event wiring, VB `Handles` clauses, service operations, global events, web
+pipeline types, program entry, framework callbacks) and each flow says why it counts. Calls are followed by name through
+the method index, only when one target is plausible; ambiguous calls, reflection, recursion and the depth limit are
+listed as "could not follow" with the reason. Each flow ends at the data, outside systems, session keys, configuration and
+authentication it touches, and lists the request inputs it reads and the declared access rules that mention it.
+Nothing is built or run, and no app-specific names are in the tool. Design and limits: `docs/flow-contract-design.md`.
+Not yet built: comparison against migrated code, the service-description check, and a scenario file interpreter
+(the sample's former checks are kept as data in `docs/examples/legacy-webforms-migration/behaviour-scenarios.json`).
 
 ```text
 dotnet run --project src/LegacyDotNetModernisationAgent -- strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|file:<strategy.json>]

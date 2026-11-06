@@ -78,7 +78,15 @@ public sealed record LegacyDependencyGraph(
     IReadOnlyList<GraphEdge> Edges,
     IReadOnlyList<ArchitecturalBoundary> Boundaries,
     IReadOnlyList<ImpactEntry> Impact,
-    IReadOnlyList<RepresentativePath> Paths);
+    IReadOnlyList<RepresentativePath> Paths)
+{
+    /// <summary>
+    /// Every edge at the place in the code where it was found, before edges between the same two nodes are merged into one.
+    /// Flow analysis needs this to say which method an edge belongs to. It is not written to the JSON artifacts.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<GraphEdge> SiteEdges { get; init; } = [];
+}
 
 // ---- Migration analysis (deterministic policy output) ---------------------------------------
 

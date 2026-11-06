@@ -1,0 +1,1056 @@
+{
+  "Repository": "legacy-webforms-migration",
+  "CommitSha": "b1dcc50fa9dbfc95fe4a51fe5b96b20ae70d7e65",
+  "Flows": [
+    {
+      "Id": "flow:LegacyDataService:CustomerData.DataPortal_Fetch",
+      "Unit": "WCF service (LegacyDataServiceHost)",
+      "Project": "LegacyDataService",
+      "EntryType": "CustomerData",
+      "EntryMethod": "DataPortal_Fetch",
+      "EntryKind": "Framework callback",
+      "EntryEvidence": "naming convention of the business-object framework; called by the framework, not by application code",
+      "Inputs": [],
+      "Access": [
+        "CslaAuthorizationRules: CustomerData.CustomerId AllowRead Admin",
+        "CslaAuthorizationRules: CustomerData.CustomerName AllowRead Admin",
+        "CslaAuthorizationRules: CustomerData.Status AllowRead Admin"
+      ],
+      "Steps": [
+        {
+          "Type": "CustomerData",
+          "Method": "DataPortal_Fetch",
+          "Basis": "entry point",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 45,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "GetCustomerById",
+          "Basis": "by name",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 19,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ExecuteCustomerInfoSelectById",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "LoadCustomers",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 23,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ResolveFixturePath",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 33,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerFixturePath",
+          "Detail": "appSettings[LegacyCustomerFixturePath]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 34
+        },
+        {
+          "Kind": "Data",
+          "Target": "sp:dbo.CustomerInfo_SelectById",
+          "Detail": "LegacyCustomerDal.ExecuteCustomerInfoSelectById -\u003E dbo.CustomerInfo_SelectById [NamingConvention]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.Exists",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 40
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.OpenRead",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 27
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 9,
+      "Coverage": "5 step(s) followed; 9 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyDataService:LegacyCustomerService.GetCustomer",
+      "Unit": "WCF service (LegacyDataServiceHost)",
+      "Project": "LegacyDataService",
+      "EntryType": "LegacyCustomerService",
+      "EntryMethod": "GetCustomer",
+      "EntryKind": "Service operation",
+      "EntryEvidence": "OperationContract GetCustomer on ILegacyCustomerService, implemented by LegacyCustomerService",
+      "Inputs": [],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "GetCustomer",
+          "Basis": "entry point",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 13,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "ValidateTrustedSubsystem",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 51,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 12,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "DataPortal_Fetch",
+          "Basis": "framework convention (business-object framework data portal)",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 45,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "GetCustomerById",
+          "Basis": "by name",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 19,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ExecuteCustomerInfoSelectById",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "LoadCustomers",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 23,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ResolveFixturePath",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 33,
+          "Boundary": null
+        },
+        {
+          "Type": "UpgradeMarker",
+          "Method": "GetUpgradeStatus",
+          "Basis": "named type",
+          "Location": "src/LegacySharedAssembly/UpgradeMarker.cs",
+          "Line": 5,
+          "Boundary": "crosses into Shared libraries and technologies"
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: Thread.CurrentPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericIdentity",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 25
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationName",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 56
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationSecret",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 57
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerFixturePath",
+          "Detail": "appSettings[LegacyCustomerFixturePath]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 34
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationName",
+          "Detail": "appSettings[LegacyTrustedApplicationName]",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 56
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationSecret",
+          "Detail": "appSettings[LegacyTrustedApplicationSecret]",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 57
+        },
+        {
+          "Kind": "Data",
+          "Target": "sp:dbo.CustomerInfo_SelectById",
+          "Detail": "LegacyCustomerDal.ExecuteCustomerInfoSelectById -\u003E dbo.CustomerInfo_SelectById [NamingConvention]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.Exists",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 40
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.OpenRead",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 27
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 17,
+      "Coverage": "9 step(s) followed; 17 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:AjaxToolkitPage.SubmitButton_Click",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "AjaxToolkitPage",
+      "EntryMethod": "SubmitButton_Click",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: SubmitButton.Click",
+      "Inputs": [],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "AjaxToolkitPage",
+          "Method": "SubmitButton_Click",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/AjaxToolkit.aspx.vb",
+          "Line": 11,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 2,
+      "Coverage": "1 step(s) followed; 2 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:CompatibilityPage.Page_Load",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "CompatibilityPage",
+      "EntryMethod": "Page_Load",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: Me.Load",
+      "Inputs": [],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "CompatibilityPage",
+          "Method": "Page_Load",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/Compatibility.aspx.vb",
+          "Line": 7,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Outside system",
+          "Target": "integration:ExternalHttp",
+          "Detail": "ExternalHttp: creates HttpClient",
+          "Location": "src/LegacyWebFormsSample/Pages/Compatibility.aspx.vb",
+          "Line": 8
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 1,
+      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:CustomerInfo.DataPortal_Fetch",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "CustomerInfo",
+      "EntryMethod": "DataPortal_Fetch",
+      "EntryKind": "Framework callback",
+      "EntryEvidence": "naming convention of the business-object framework; called by the framework, not by application code",
+      "Inputs": [],
+      "Access": [
+        "CslaAuthorizationRules: CustomerInfo.CustomerId AllowRead Admin",
+        "CslaAuthorizationRules: CustomerInfo.CustomerName AllowRead Admin",
+        "CslaAuthorizationRules: CustomerInfo.Status AllowRead Admin"
+      ],
+      "Steps": [
+        {
+          "Type": "CustomerInfo",
+          "Method": "DataPortal_Fetch",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 86,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "IsAuthorizedUser",
+          "Basis": "same type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 31,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "IsAuthenticatedUser",
+          "Basis": "same type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 22,
+          "Boundary": null
+        },
+        {
+          "Type": "LoginPage",
+          "Method": "GetCurrentRole",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 13,
+          "Boundary": null
+        },
+        {
+          "Type": "WcfClientFacade",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 104,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "GetCustomer",
+          "Basis": "implementation of ILegacyCustomerService",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 13,
+          "Boundary": "crosses into WCF service (LegacyDataServiceHost)"
+        },
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "ValidateTrustedSubsystem",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 51,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 12,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "DataPortal_Fetch",
+          "Basis": "framework convention (business-object framework data portal)",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 45,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "GetCustomerById",
+          "Basis": "by name",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 19,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ExecuteCustomerInfoSelectById",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "LoadCustomers",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 23,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ResolveFixturePath",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 33,
+          "Boundary": null
+        },
+        {
+          "Type": "UpgradeMarker",
+          "Method": "GetUpgradeStatus",
+          "Basis": "named type",
+          "Location": "src/LegacySharedAssembly/UpgradeMarker.cs",
+          "Line": 5,
+          "Boundary": "crosses into Shared libraries and technologies"
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: Thread.CurrentPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericIdentity",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 25
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.Decrypt",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.FormsCookieName",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 18
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:IdentityChecksInCode",
+          "Detail": "IdentityChecksInCode: Identity.IsAuthenticated",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 28
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationName",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 127
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationSecret",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 128
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerFixturePath",
+          "Detail": "appSettings[LegacyCustomerFixturePath]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 34
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerServiceUrl",
+          "Detail": "appSettings[LegacyCustomerServiceUrl]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 105
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationName",
+          "Detail": "appSettings[LegacyTrustedApplicationName]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 127
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationSecret",
+          "Detail": "appSettings[LegacyTrustedApplicationSecret]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 128
+        },
+        {
+          "Kind": "Data",
+          "Target": "sp:dbo.CustomerInfo_SelectById",
+          "Detail": "LegacyCustomerDal.ExecuteCustomerInfoSelectById -\u003E dbo.CustomerInfo_SelectById [NamingConvention]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.Exists",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 40
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.OpenRead",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 27
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 31,
+      "Coverage": "14 step(s) followed; 31 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:DataAccessPage.Page_Load",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "DataAccessPage",
+      "EntryMethod": "Page_Load",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: Me.Load",
+      "Inputs": [
+        "QueryString[\u0022customerId\u0022]"
+      ],
+      "Access": [
+        "WebConfig: location:Pages/DataAccess.aspx allow users=*",
+        "WebConfig: location:Pages/DataAccess.aspx deny users=?"
+      ],
+      "Steps": [
+        {
+          "Type": "DataAccessPage",
+          "Method": "Page_Load",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/DataAccess.aspx.vb",
+          "Line": 11,
+          "Boundary": null
+        },
+        {
+          "Type": "LoginPage",
+          "Method": "GetCurrentRole",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 13,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 17,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "DataPortal_Fetch",
+          "Basis": "framework convention (business-object framework data portal)",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 86,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "IsAuthorizedUser",
+          "Basis": "same type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 31,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerInfo",
+          "Method": "IsAuthenticatedUser",
+          "Basis": "same type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 22,
+          "Boundary": null
+        },
+        {
+          "Type": "WcfClientFacade",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 104,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "GetCustomer",
+          "Basis": "implementation of ILegacyCustomerService",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 13,
+          "Boundary": "crosses into WCF service (LegacyDataServiceHost)"
+        },
+        {
+          "Type": "LegacyCustomerService",
+          "Method": "ValidateTrustedSubsystem",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 51,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "GetCustomer",
+          "Basis": "named type",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 12,
+          "Boundary": null
+        },
+        {
+          "Type": "CustomerData",
+          "Method": "DataPortal_Fetch",
+          "Basis": "framework convention (business-object framework data portal)",
+          "Location": "src/LegacyDataService/BusinessObjects/CustomerData.vb",
+          "Line": 45,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "GetCustomerById",
+          "Basis": "by name",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 19,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ExecuteCustomerInfoSelectById",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "LoadCustomers",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 23,
+          "Boundary": null
+        },
+        {
+          "Type": "LegacyCustomerDal",
+          "Method": "ResolveFixturePath",
+          "Basis": "same type",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 33,
+          "Boundary": null
+        },
+        {
+          "Type": "UpgradeMarker",
+          "Method": "GetUpgradeStatus",
+          "Basis": "named type",
+          "Location": "src/LegacySharedAssembly/UpgradeMarker.cs",
+          "Line": 5,
+          "Boundary": "crosses into Shared libraries and technologies"
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: Thread.CurrentPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericIdentity",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 25
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:CustomPrincipal",
+          "Detail": "CustomPrincipal: creates GenericPrincipal",
+          "Location": "src/LegacyDataService/Services/LegacyCustomerService.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.Decrypt",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.FormsCookieName",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 18
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:IdentityChecksInCode",
+          "Detail": "IdentityChecksInCode: Identity.IsAuthenticated",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 28
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:IdentityChecksInCode",
+          "Detail": "IdentityChecksInCode: Request.IsAuthenticated",
+          "Location": "src/LegacyWebFormsSample/Pages/DataAccess.aspx.vb",
+          "Line": 12
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationName",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 127
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:SharedSecretOrTrustedSubsystem",
+          "Detail": "SharedSecretOrTrustedSubsystem: reads credential-like setting LegacyTrustedApplicationSecret",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 128
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerFixturePath",
+          "Detail": "appSettings[LegacyCustomerFixturePath]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 34
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyCustomerServiceUrl",
+          "Detail": "appSettings[LegacyCustomerServiceUrl]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 105
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationName",
+          "Detail": "appSettings[LegacyTrustedApplicationName]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 127
+        },
+        {
+          "Kind": "Configuration",
+          "Target": "config:LegacyTrustedApplicationSecret",
+          "Detail": "appSettings[LegacyTrustedApplicationSecret]",
+          "Location": "src/LegacyWebFormsSample/BusinessObjects/CustomerInfo.vb",
+          "Line": 128
+        },
+        {
+          "Kind": "Data",
+          "Target": "sp:dbo.CustomerInfo_SelectById",
+          "Detail": "LegacyCustomerDal.ExecuteCustomerInfoSelectById -\u003E dbo.CustomerInfo_SelectById [NamingConvention]",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 10
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.Exists",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 40
+        },
+        {
+          "Kind": "Outside system",
+          "Target": "integration:FileSystem",
+          "Detail": "FileSystem: calls File.OpenRead",
+          "Location": "src/LegacyDataService/DataAccess/LegacyCustomerDal.vb",
+          "Line": 27
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LegacyUserRole\u0022) read",
+          "Location": "src/LegacyWebFormsSample/Pages/DataAccess.aspx.vb",
+          "Line": 17
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 39,
+      "Coverage": "16 step(s) followed; 39 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:DefaultPage.Page_Load",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "DefaultPage",
+      "EntryMethod": "Page_Load",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: Me.Load",
+      "Inputs": [],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "DefaultPage",
+          "Method": "Page_Load",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/Default.aspx.vb",
+          "Line": 7,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 0,
+      "Coverage": "1 step(s) followed; 0 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:LoginPage.LoginButton_Click",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "LoginPage",
+      "EntryMethod": "LoginButton_Click",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: LoginButton.Click",
+      "Inputs": [
+        "QueryString[\u0022ReturnUrl\u0022]"
+      ],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "LoginPage",
+          "Method": "LoginButton_Click",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 46,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.DefaultUrl",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 67
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.Encrypt",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 55
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.FormsCookieName",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 56
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.FormsCookiePath",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 54
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: creates FormsAuthenticationTicket",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 54
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LastPage\u0022) write",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 63
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LegacyUser\u0022) write",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 61
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LegacyUserRole\u0022) write",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 62
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 11,
+      "Coverage": "1 step(s) followed; 11 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:LoginPage.Page_Load",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "LoginPage",
+      "EntryMethod": "Page_Load",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: Me.Load",
+      "Inputs": [],
+      "Access": [],
+      "Steps": [
+        {
+          "Type": "LoginPage",
+          "Method": "Page_Load",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 35,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:IdentityChecksInCode",
+          "Detail": "IdentityChecksInCode: Request.IsAuthenticated",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 36
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 1,
+      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    },
+    {
+      "Id": "flow:LegacyWebFormsSample:ProfilePage.Page_Load",
+      "Unit": "Website (LegacyWebFormsSample)",
+      "Project": "LegacyWebFormsSample",
+      "EntryType": "ProfilePage",
+      "EntryMethod": "Page_Load",
+      "EntryKind": "Page or control event",
+      "EntryEvidence": "Handles clause: Me.Load",
+      "Inputs": [],
+      "Access": [
+        "WebConfig: location:Pages/Profile.aspx allow users=*",
+        "WebConfig: location:Pages/Profile.aspx deny users=?"
+      ],
+      "Steps": [
+        {
+          "Type": "ProfilePage",
+          "Method": "Page_Load",
+          "Basis": "entry point",
+          "Location": "src/LegacyWebFormsSample/Pages/Profile.aspx.vb",
+          "Line": 7,
+          "Boundary": null
+        },
+        {
+          "Type": "LoginPage",
+          "Method": "GetCurrentRole",
+          "Basis": "named type",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 13,
+          "Boundary": null
+        }
+      ],
+      "Terminals": [
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.Decrypt",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 24
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:FormsAuthentication",
+          "Detail": "FormsAuthentication: FormsAuthentication.FormsCookieName",
+          "Location": "src/LegacyWebFormsSample/Pages/Login.aspx.vb",
+          "Line": 18
+        },
+        {
+          "Kind": "Authentication",
+          "Target": "auth:IdentityChecksInCode",
+          "Detail": "IdentityChecksInCode: Request.IsAuthenticated",
+          "Location": "src/LegacyWebFormsSample/Pages/Profile.aspx.vb",
+          "Line": 8
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LastPage\u0022) read",
+          "Location": "src/LegacyWebFormsSample/Pages/Profile.aspx.vb",
+          "Line": 15
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LegacyUser\u0022) read",
+          "Location": "src/LegacyWebFormsSample/Pages/Profile.aspx.vb",
+          "Line": 13
+        },
+        {
+          "Kind": "Session",
+          "Target": "state:Session",
+          "Detail": "Session(\u0022LegacyUserRole\u0022) read",
+          "Location": "src/LegacyWebFormsSample/Pages/Profile.aspx.vb",
+          "Line": 14
+        }
+      ],
+      "CouldNotFollow": [],
+      "UnfollowedCalls": 12,
+      "Coverage": "2 step(s) followed; 12 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+    }
+  ],
+  "Notes": [
+    "Flows are read from the code and followed by name, not run. A call is followed only when one target is plausible; otherwise the flow says why it stopped.",
+    "Handlers are found from markup wiring and VB Handles clauses where present, and otherwise by naming convention, which each flow labels.",
+    "A flow shows what the code can do, not how often or with which data."
+  ]
+}

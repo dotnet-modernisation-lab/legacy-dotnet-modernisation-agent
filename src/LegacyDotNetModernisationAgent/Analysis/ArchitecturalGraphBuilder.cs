@@ -478,7 +478,10 @@ public sealed partial class ArchitecturalGraphBuilder
             finalEdges,
             Boundaries(finalEdges, byId),
             Impact(finalNodes, finalEdges),
-            Paths(finalNodes, finalEdges, byId));
+            Paths(finalNodes, finalEdges, byId))
+        {
+            SiteEdges = edges.Where(e => nodes.ContainsKey(e.From) && nodes.ContainsKey(e.To)).ToList()
+        };
     }
 
     private static string LibName(string fullName)
