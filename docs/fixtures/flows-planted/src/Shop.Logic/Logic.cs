@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+using System.Web.Services;
 using System.Data.SqlClient;
 
 namespace Shop.Logic
@@ -57,6 +58,12 @@ namespace Shop.Logic
     public class PriceBook
     {
         public decimal Lookup(string sku) { return 1m; }
+    }
+
+    public class LegacyQuotes : WebService
+    {
+        [WebMethod]
+        public string QuoteFor(string sku) { return new PriceBook().Lookup(sku).ToString(); }
     }
 
     public class BasketStore

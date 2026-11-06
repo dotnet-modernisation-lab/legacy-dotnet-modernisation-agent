@@ -7,6 +7,8 @@ const string Usage = """
                                                               evidence bundle, strategy, validation, Markdown and Word report
       diagram <repositoryPath> [artifactsDirectory]           architecture overview (SVG, Mermaid) and a detail view per area
       flows <repositoryPath> [artifactsDirectory]             what each entry point does, read from the code (flows.json, flows.md)
+      wsdl <fileOrAddress> [artifactsDirectory]               read a SOAP service description into comparable facts
+      wsdl-compare <old> <new> [artifactsDirectory]           compare two service descriptions; returns 1 if anything breaks callers
       offering <markdownPath> [output.docx]                  Word version of the sales offering Markdown
       summary <repositoryPath> [artifactsDirectory]           customer summary (Word, Markdown) in plain language, with the overview diagram
     """;
@@ -22,7 +24,7 @@ Console.CancelKeyPress += (_, eventArgs) =>
 var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
 var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
 
-if (positional.Length < 2 || command is not ("assess" or "strategy" or "diagram" or "summary" or "offering" or "flows"))
+if (positional.Length < (command == "wsdl-compare" ? 3 : 2) || command is not ("assess" or "strategy" or "diagram" or "summary" or "offering" or "flows" or "wsdl" or "wsdl-compare"))
 {
     Console.Error.WriteLine(Usage);
 
@@ -38,6 +40,16 @@ try
         await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
 
         return 0;
+    }
+
+    if (command == "wsdl")
+    {
+        return await new WsdlCommand().ReadAsync(positional[1], artifacts, cancellationTokenSource.Token);
+    }
+
+    if (command == "wsdl-compare")
+    {
+        return await new WsdlCommand().CompareAsync(positional[1], positional[2], positional.Length > 3 ? positional[3] : "Artifacts", cancellationTokenSource.Token);
     }
 
     if (command == "flows")

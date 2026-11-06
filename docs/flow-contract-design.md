@@ -94,7 +94,7 @@ Comparison against migrated code reuses the same extractor on the target (it is 
 
 ## 9. The parts that can be checked by running
 
-- **Service description (WSDL or SOAP):** operations, parameters, data shapes and faults are a machine-readable contract. Compare it between old and new. Needs a reachable endpoint or a saved description file.
+- **Service description (WSDL or SOAP):** operations, parameters, data shapes and faults are a machine-readable contract. Compare it between old and new. Needs a reachable endpoint or a saved description file. Built: `wsdl` and `wsdl-compare` (WSDL 1.1). ASMX `WebMethod` entry points are read from code into flows.
 - **User-supplied scenario file:** steps, inputs and expected values written by someone who knows the app. Nothing app-specific lives in the tool. The sample's former checks move to `docs/examples/legacy-webforms-migration/behaviour-scenarios.json`.
 - **Recorded real use (roadmap):** a browser or Fiddler capture of a person using the app, replayed against old and new. A person supplies data and sign-in.
 - **Roadmap:** IIS logs to rank flows by real use; existing UI or test suites; stored-procedure characterisation against a test database.

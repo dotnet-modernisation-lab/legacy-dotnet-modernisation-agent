@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions name="OrderService"
+    targetNamespace="http://example.test/orders"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://example.test/orders">
+  <wsdl:types>
+    <xs:schema targetNamespace="http://example.test/orders" elementFormDefault="qualified">
+      <xs:complexType name="OrderV2">
+        <xs:sequence>
+          <xs:element name="id" type="xs:long"/>
+          <xs:element name="status">
+            <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="Open"/><xs:enumeration value="Closed"/><xs:enumeration value="OnHold"/></xs:restriction></xs:simpleType>
+          </xs:element>
+          <xs:element name="lines" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+      <xs:element name="GetOrder"><xs:complexType><xs:sequence>
+        <xs:element name="orderId" type="xs:int"/>
+        <xs:element name="region" type="xs:string"/>
+        <xs:element name="locale" type="xs:string" minOccurs="0"/>
+      </xs:sequence></xs:complexType></xs:element>
+      <xs:element name="GetOrderResponse"><xs:complexType><xs:sequence><xs:element name="GetOrderResult" type="tns:OrderV2"/></xs:sequence></xs:complexType></xs:element>
+      <xs:element name="Ship"><xs:complexType><xs:sequence><xs:element name="orderId" type="xs:int"/></xs:sequence></xs:complexType></xs:element>
+      <xs:element name="ShipResponse"><xs:complexType><xs:sequence><xs:element name="trackingId" type="xs:string"/></xs:sequence></xs:complexType></xs:element>
+      <xs:element name="OrderNotFound"><xs:complexType><xs:sequence><xs:element name="reason" type="xs:string"/></xs:sequence></xs:complexType></xs:element>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="GetOrderRequest"><wsdl:part name="parameters" element="tns:GetOrder"/></wsdl:message>
+  <wsdl:message name="GetOrderResponse"><wsdl:part name="parameters" element="tns:GetOrderResponse"/></wsdl:message>
+  <wsdl:message name="ShipRequest"><wsdl:part name="parameters" element="tns:Ship"/></wsdl:message>
+  <wsdl:message name="ShipResponse"><wsdl:part name="parameters" element="tns:ShipResponse"/></wsdl:message>
+  <wsdl:message name="OrderNotFoundFault"><wsdl:part name="detail" element="tns:OrderNotFound"/></wsdl:message>
+  <wsdl:portType name="IOrderService">
+    <wsdl:operation name="GetOrder">
+      <wsdl:input message="tns:GetOrderRequest"/><wsdl:output message="tns:GetOrderResponse"/>
+      <wsdl:fault name="OrderNotFound" message="tns:OrderNotFoundFault"/>
+    </wsdl:operation>
+    <wsdl:operation name="Ship">
+      <wsdl:input message="tns:ShipRequest"/><wsdl:output message="tns:ShipResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="OrderBinding" type="tns:IOrderService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="GetOrder"><soap:operation soapAction="urn:orders:get"/><wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output><wsdl:fault name="OrderNotFound"><soap:fault name="OrderNotFound" use="literal"/></wsdl:fault></wsdl:operation>
+    <wsdl:operation name="Ship"><soap:operation soapAction="urn:orders:ship"/><wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output></wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="OrderService">
+    <wsdl:port name="OrderPort" binding="tns:OrderBinding"><soap:address location="https://new-host.example.test/orders"/></wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

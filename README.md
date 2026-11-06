@@ -47,6 +47,20 @@ Not yet built: comparison against migrated code, the service-description check, 
 (the sample's former checks are kept as data in `docs/examples/legacy-webforms-migration/behaviour-scenarios.json`).
 
 ```text
+dotnet run --project src/LegacyDotNetModernisationAgent -- wsdl <fileOrAddress> [artifactsDirectory]
+dotnet run --project src/LegacyDotNetModernisationAgent -- wsdl-compare <old> <new> [artifactsDirectory]
+```
+
+`wsdl` reads a SOAP 1.1 service description (a file or an address, with the WSDL and schema files it imports) into
+comparable facts: operations, message shapes (element names, types, how often each may appear, nil, allowed values),
+faults, SOAP action and encoding, declared security policy names and endpoints. `wsdl-compare` compares two and
+classifies each difference from the point of view of a caller built against the old contract: Breaking, Review,
+Compatible or Informational. It returns exit code 1 when anything is Breaking, so it can gate a migration. Anything it
+could not read (a missing import, WSDL 2.0, `xs:any`, groups) is listed, and the comparison says it is incomplete.
+The rules are fixed and conservative; behaviour behind the service is not compared. Fetching an address is the only network
+call. Planted example: `docs/fixtures/wsdl`.
+
+```text
 dotnet run --project src/LegacyDotNetModernisationAgent -- strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|file:<strategy.json>]
 ```
 

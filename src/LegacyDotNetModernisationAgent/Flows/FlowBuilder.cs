@@ -210,6 +210,12 @@ public sealed partial class FlowBuilder
                     yield return new Entry(type, method, "Web pipeline", $"type implements {string.Join(", ", type.Type.Bases.Select(@base => @base.SimpleName).Where(name => HandlerBases.Contains(name, StringComparer.Ordinal)))}", 2);
                 }
 
+                if (type.Type.Bases.Any(@base => @base.SimpleName.Equals("WebService", StringComparison.Ordinal))
+                    && method.Attributes.Any(attribute => attribute.Name is "WebMethod" or "WebMethodAttribute"))
+                {
+                    yield return new Entry(type, method, "Service operation", "WebMethod on a WebService class (SOAP over ASMX)", 1);
+                }
+
                 foreach (var (hostedBase, methods) in HostedBases)
                 {
                     if (methods.Contains(method.Name, StringComparer.Ordinal) && type.Type.Bases.Any(@base => @base.SimpleName.Equals(hostedBase, StringComparison.Ordinal)))

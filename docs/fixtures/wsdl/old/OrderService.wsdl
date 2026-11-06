@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions name="OrderService"
+    targetNamespace="http://example.test/orders"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://example.test/orders"
+    xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"
+    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+  <wsp:Policy wsu:Id="TransportPolicy"><wsp:ExactlyOne><wsp:All><sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy"/></wsp:All></wsp:ExactlyOne></wsp:Policy>
+  <wsdl:types>
+    <xs:schema targetNamespace="http://example.test/orders">
+      <xs:import schemaLocation="OrderTypes.xsd" namespace="http://example.test/orders"/>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="GetOrderRequest"><wsdl:part name="parameters" element="tns:GetOrder"/></wsdl:message>
+  <wsdl:message name="GetOrderResponse"><wsdl:part name="parameters" element="tns:GetOrderResponse"/></wsdl:message>
+  <wsdl:message name="CancelRequest"><wsdl:part name="parameters" element="tns:Cancel"/></wsdl:message>
+  <wsdl:message name="CancelResponse"><wsdl:part name="parameters" element="tns:CancelResponse"/></wsdl:message>
+  <wsdl:message name="OrderNotFoundFault"><wsdl:part name="detail" element="tns:OrderNotFound"/></wsdl:message>
+  <wsdl:portType name="IOrderService">
+    <wsdl:operation name="GetOrder">
+      <wsdl:input message="tns:GetOrderRequest"/><wsdl:output message="tns:GetOrderResponse"/>
+      <wsdl:fault name="OrderNotFound" message="tns:OrderNotFoundFault"/>
+    </wsdl:operation>
+    <wsdl:operation name="Cancel">
+      <wsdl:input message="tns:CancelRequest"/><wsdl:output message="tns:CancelResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="OrderBinding" type="tns:IOrderService">
+    <wsp:PolicyReference URI="#TransportPolicy"/>
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="GetOrder"><soap:operation soapAction="http://example.test/orders/GetOrder"/><wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output><wsdl:fault name="OrderNotFound"><soap:fault name="OrderNotFound" use="literal"/></wsdl:fault></wsdl:operation>
+    <wsdl:operation name="Cancel"><soap:operation soapAction="http://example.test/orders/Cancel"/><wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output></wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="OrderService">
+    <wsdl:port name="OrderPort" binding="tns:OrderBinding"><soap:address location="http://old-host.example.test/OrderService.svc"/></wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
