@@ -18,16 +18,19 @@ public sealed class ArchitectureCommand
         var context = EstateContextBuilder.Build(assessment, graph, unitMap);
         var flows = new FlowBuilder().Build(root, assessment, graph, unitMap);
         var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context, flows);
+        var components = ComponentMapBuilder.Build(assessment, graph, unitMap);
         var svg = ArchitectureDiagram.OverviewSvg(input, context);
 
         Directory.CreateDirectory(artifactsDirectory);
 
         await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "architecture-overview.svg"), svg, cancellationToken);
 
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "components.md"), ComponentMapWriter.Markdown(components, assessment.RepositoryName).Replace("\r\n", "\n", StringComparison.Ordinal), cancellationToken);
+
         var png = SvgRenderer.ToPng(svg);
 
         await File.WriteAllBytesAsync(Path.Combine(artifactsDirectory, "architecture-overview.png"), png.Png, cancellationToken);
-        ArchitectureDocumentWriter.Word(Path.Combine(artifactsDirectory, "architecture.docx"), assessment.RepositoryName, summary, context, flows, png);
+        ArchitectureDocumentWriter.Word(Path.Combine(artifactsDirectory, "architecture.docx"), assessment.RepositoryName, summary, context, flows, components, png);
 
         Console.WriteLine($"{assessment.RepositoryName}: architecture document with {summary.Areas.Count} part(s) and {flows.Flows.Count} flow(s)");
         Console.WriteLine($"Wrote architecture.docx, architecture-overview.svg and architecture-overview.png to {artifactsDirectory}");

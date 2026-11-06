@@ -20,7 +20,7 @@ public static class ArchitectureDocumentWriter
     private const string Muted = "5B6770";
     private const string Navy = "1F3A5F";
 
-    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, (byte[] Png, int Width, int Height)? diagram)
+    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, ComponentMap components, (byte[] Png, int Width, int Height)? diagram)
     {
         using var document = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
 
@@ -75,13 +75,13 @@ public static class ArchitectureDocumentWriter
 
         body.Append(Mark(CustomerSummaryWriter.Heading("The parts"), "The parts", 1));
         body.Append(CustomerSummaryWriter.Table(
-            ["Part", "What it is", "What it contains", "Size", "Confidence"],
+            ["Part", "What it is", "Main components", "Size", "Confidence"],
             [18, 24, 34, 12, 12],
             summary.Areas.Select(area => new[]
             {
                 CustomerSummaryWriter.ShowKind(area) ? $"{area.Name}\n{area.Kind}" : area.Name,
                 area.What,
-                CustomerSummaryWriter.Detail(area, "\n"),
+                MainComponents(components, area.Name),
                 $"{area.SizeWords} ({area.Size})",
                 area.Confidence
             }).ToList()));
@@ -89,6 +89,45 @@ public static class ArchitectureDocumentWriter
         foreach (var line in summary.HowItFits.Where(line => !line.StartsWith("What the ", StringComparison.Ordinal)))
         {
             body.Append(CustomerSummaryWriter.Bullet(line));
+        }
+
+        // ---- How each part is built ---------------------------------------------------------------------
+        body.Append(Mark(CustomerSummaryWriter.Heading("How each part is built"), "How each part is built", 1));
+        body.Append(CustomerSummaryWriter.Para(ComponentMapWriter.Framing + " Each table shows the most connected components of a part; components.md lists all of them.", size: 19, colour: Muted, after: 80));
+
+        foreach (var unit in components.Components.GroupBy(component => component.Unit).OrderBy(group => group.Key, StringComparer.Ordinal))
+        {
+            var shown = unit.OrderByDescending(component => component.UsedBy.Count + component.DependsOn.Count).ThenBy(component => component.Name, StringComparer.Ordinal).Take(MaxComponentsPerPart).OrderBy(component => component.Name, StringComparer.Ordinal).ToList();
+
+            body.Append(Mark(CustomerSummaryWriter.Para(CustomerSummary_DisplayName(unit.Key), size: 24, bold: true, colour: Navy, after: 60, before: 160), CustomerSummary_DisplayName(unit.Key) + " (structure)", 2));
+            body.Append(CustomerSummaryWriter.Table(
+                ["Component", "Layer", "Main items", "Depends on", "Used by"],
+                [20, 12, 22, 23, 23],
+                shown.Select(component => new[]
+                {
+                    component.Name,
+                    string.Join(", ", component.Layers),
+                    ComponentMapWriter.Join(component.MainItems, 4),
+                    ComponentMapWriter.Join(component.DependsOn, 4),
+                    ComponentMapWriter.Join(component.UsedBy, 4)
+                }).ToList()));
+
+            if (unit.Count() > shown.Count)
+            {
+                body.Append(CustomerSummaryWriter.Para($"{unit.Count() - shown.Count} further component(s) of this part are listed in components.md.", size: 18, colour: Muted, after: 60, before: 40));
+            }
+        }
+
+        body.Append(CustomerSummaryWriter.Para("Worth knowing about the structure", size: 21, bold: true, after: 20, before: 140));
+
+        foreach (var fact in components.Loops.Concat(components.DirectReaches).Concat(components.MostUsed))
+        {
+            body.Append(CustomerSummaryWriter.Bullet(fact.Statement));
+        }
+
+        if (components.Loops.Count == 0 && components.DirectReaches.Count == 0)
+        {
+            body.Append(CustomerSummaryWriter.Bullet("No loops between components and no presentation code depending directly on data access were found."));
         }
 
         // ---- People and outside systems -----------------------------------------------------------------
@@ -228,6 +267,17 @@ public static class ArchitectureDocumentWriter
             new PageMargin { Top = 907, Bottom = 907, Left = 1021u, Right = 1021u, Header = 454u, Footer = 454u }));
 
         main.Document.Save();
+    }
+
+    private const int MaxComponentsPerPart = 12;
+
+    /// <summary>The names of the most connected components of a part, so the parts table says what is inside without counting kinds of code.</summary>
+    private static string MainComponents(ComponentMap components, string areaName)
+    {
+        var inPart = components.Components.Where(component => CustomerSummaryBuilder.DisplayName(component.Unit) == areaName)
+            .OrderByDescending(component => component.UsedBy.Count + component.DependsOn.Count).ThenBy(component => component.Name, StringComparer.Ordinal).ToList();
+
+        return inPart.Count == 0 ? "see the data touched" : ComponentMapWriter.Join(inPart.Select(component => component.Name).ToList(), 5);
     }
 
     private static string CustomerSummary_DisplayName(string unitName) => CustomerSummaryBuilder.DisplayName(unitName);
