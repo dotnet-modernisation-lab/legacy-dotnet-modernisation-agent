@@ -101,3 +101,9 @@ Sources of behaviour, in order of build:
 - [x] "External web services" overclaimed (an HttpClient was only created, no call or address): renamed "Web calls (target unknown)" and reworded the summary sentence
 - [ ] Extract the address an HTTP client calls (URL literals, config keys) so the outside system can be named when it is visible
 - [ ] Review other integration names for the same capability-versus-use overclaim (mail server, message queue, COM)
+
+### Architecture at scale (component map, data touch, narrative flows)
+- [x] Component map (folders as components; loops, layer skips, most depended-on); data-touch matrix attributed to running parts through the flows, via stored procedures, with undefined procedures and not-reached code shown; Given/When/Then flows with step-attributed terminals; method-name indexes; seeded large-estate generator (8 s for about 400 files and 120 flows)
+- [ ] Access matrix: roles and sign-in state against journeys (Given/When/Then already carries them per flow); needs role names read from code (IsInRole literals) as facts
+- [ ] Component-level diagram per part; namespace-based grouping if namespaces are added to the graph
+- [ ] Customer-facing wording for the new sections

@@ -1,0 +1,5 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup><OutputType>Library</OutputType><AssemblyName>Fx.Logic</AssemblyName><TargetFrameworkVersion>v4.8</TargetFrameworkVersion></PropertyGroup>
+  <ItemGroup></ItemGroup>
+  <ItemGroup><ProjectReference Include="..\Fx.Data\Fx.Data.csproj" /><Compile Include="Alpha\AlphaWorker.cs" /><Compile Include="Beta\BetaWorker.cs" /><Compile Include="Gamma\GammaWorker.cs" /></ItemGroup>
+</Project>

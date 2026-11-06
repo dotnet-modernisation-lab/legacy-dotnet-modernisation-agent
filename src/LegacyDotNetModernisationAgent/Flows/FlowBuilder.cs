@@ -59,6 +59,8 @@ public sealed partial class FlowBuilder
     private readonly List<TypeDef> types = [];
     private readonly Dictionary<string, List<TypeDef>> typesByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<TypeDef>> typesByKey = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<TypeDef>> typesWithMethod = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<TypeDef>> implementersOf = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string Path, string Type, string Method), List<InvocationFact>> invocations = [];
     private readonly Dictionary<string, List<GraphEdge>> edgesByFile = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, HashSet<string>> identifiersByType = new(StringComparer.OrdinalIgnoreCase);
@@ -112,6 +114,19 @@ public sealed partial class FlowBuilder
                 types.Add(definition);
                 Add(typesByName, type.Name, definition);
                 Add(typesByKey, definition.Key, definition);
+
+                foreach (var name in type.Methods.Select(method => method.Name).Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    Add(typesWithMethod, name, definition);
+                }
+
+                if (type.Kind != "Interface")
+                {
+                    foreach (var @base in type.Bases)
+                    {
+                        Add(implementersOf, @base.SimpleName, definition);
+                    }
+                }
             }
 
             foreach (var call in source.Invocations.Where(call => call.Type is not null && call.Method is not null))
@@ -279,16 +294,16 @@ public sealed partial class FlowBuilder
     {
         var state = new State();
 
-        Follow(entry.Type, entry.Method, "entry point", 0, state, previousUnit: null);
+        Follow(entry.Type, entry.Method, "entry point", 0, state, previousUnit: null, callerStep: -1);
 
         var rules = assessment.Authentication.AccessRules
             .Where(rule => rule.Location.Equals(entry.Type.Source.Path, StringComparison.OrdinalIgnoreCase)
                            || TargetSegments(rule.Target).Any(segment => segment.Equals(entry.Type.Type.Name, StringComparison.OrdinalIgnoreCase)
                                || segment.Equals(Path.GetFileNameWithoutExtension(entry.Type.Source.Path), StringComparison.OrdinalIgnoreCase)
                                || segment.Equals(Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(entry.Type.Source.Path)), StringComparison.OrdinalIgnoreCase)))
-            .Select(rule => $"{rule.Source}: {rule.Target} {rule.Operation} {rule.Principals}".TrimEnd())
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal)
+            .Select(rule => new FlowRule(rule.Source, rule.Target, rule.Operation, rule.Principals, Normalise(rule.Location), rule.Line))
+            .DistinctBy(rule => (rule.Source, rule.Target, rule.Operation, rule.Principals, rule.Location, rule.Line))
+            .OrderBy(rule => rule.Location, StringComparer.Ordinal).ThenBy(rule => rule.Line ?? 0).ThenBy(rule => rule.Target, StringComparer.Ordinal)
             .ToList();
 
         var unit = UnitOf(entry.Type);
@@ -310,13 +325,13 @@ public sealed partial class FlowBuilder
             $"{state.Steps.Count} step(s) followed; {state.Unfollowed} call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); {state.Gaps.Count} point(s) where the tool stopped for a reason listed.");
     }
 
-    private void Follow(TypeDef type, MethodFact method, string basis, int depth, State state, string? previousUnit)
+    private void Follow(TypeDef type, MethodFact method, string basis, int depth, State state, string? previousUnit, int callerStep)
     {
         var id = $"{type.Key}.{method.Name}";
 
         if (state.OnStack.Contains(id))
         {
-            AddGap(state, $"{type.Type.Name}.{method.Name}", "recursive call back to a method already being followed", type.Source.Path, method.StartLine);
+            AddGap(state, callerStep, $"{type.Type.Name}.{method.Name}", "recursive call back to a method already being followed", type.Source.Path, method.StartLine);
 
             return;
         }
@@ -328,14 +343,16 @@ public sealed partial class FlowBuilder
 
         var unit = UnitOf(type);
 
-        state.Steps.Add(new FlowStep(depth, type.Type.Name, method.Name, basis, type.Source.Path, method.StartLine,
+        state.Steps.Add(new FlowStep(depth, type.Type.Name, method.Name, basis, type.Source.Path, method.StartLine, method.EndLine,
             previousUnit is not null && previousUnit != unit ? $"crosses into {unit}" : null));
 
-        CollectTerminals(type, method, state);
+        var stepIndex = state.Steps.Count - 1;
+
+        CollectTerminals(type, method, state, stepIndex);
 
         if (depth >= MaxDepth)
         {
-            AddGap(state, $"{type.Type.Name}.{method.Name}", $"depth limit of {MaxDepth} steps reached; calls from here were not followed", type.Source.Path, method.StartLine);
+            AddGap(state, stepIndex, $"{type.Type.Name}.{method.Name}", $"depth limit of {MaxDepth} steps reached; calls from here were not followed", type.Source.Path, method.StartLine);
 
             return;
         }
@@ -357,7 +374,7 @@ public sealed partial class FlowBuilder
 
             if (ReflectionCallees.Contains(call.CalleeName, StringComparer.OrdinalIgnoreCase))
             {
-                AddGap(state, call.CalleeText, $"reflection ({call.CalleeName}); the target is chosen at run time", type.Source.Path, call.Line);
+                AddGap(state, stepIndex, call.CalleeText, $"reflection ({call.CalleeName}); the target is chosen at run time", type.Source.Path, call.Line);
                 continue;
             }
 
@@ -365,7 +382,7 @@ public sealed partial class FlowBuilder
 
             if (resolution.Reason is not null)
             {
-                AddGap(state, call.CalleeText, resolution.Reason, type.Source.Path, call.Line);
+                AddGap(state, stepIndex, call.CalleeText, resolution.Reason, type.Source.Path, call.Line);
                 continue;
             }
 
@@ -375,7 +392,7 @@ public sealed partial class FlowBuilder
                 continue;
             }
 
-            Follow(resolution.Targets[0].Type, resolution.Targets[0].Method, resolution.Targets[0].Basis, depth + 1, state, unit);
+            Follow(resolution.Targets[0].Type, resolution.Targets[0].Method, resolution.Targets[0].Basis, depth + 1, state, unit, stepIndex);
         }
 
         state.OnStack.Remove(id);
@@ -394,14 +411,14 @@ public sealed partial class FlowBuilder
     private static string Accessor(string calleeText) =>
         calleeText.Contains('.', StringComparison.Ordinal) ? calleeText[(calleeText.LastIndexOf('.') + 1)..] : calleeText;
 
-    private static void AddGap(State state, string point, string reason, string location, int line)
+    private static void AddGap(State state, int step, string point, string reason, string location, int line)
     {
-        var gap = new FlowGap(point, reason, Normalise(location), line);
+        var gap = new FlowGap(step, point, reason, Normalise(location), line);
 
         state.Gaps.TryAdd($"{gap.Location}:{gap.Line:00000}:{gap.Point}:{gap.Reason}", gap);
     }
 
-    private void CollectTerminals(TypeDef type, MethodFact method, State state)
+    private void CollectTerminals(TypeDef type, MethodFact method, State state, int step)
     {
         foreach (var edge in edgesByFile.GetValueOrDefault(Normalise(type.Source.Path)) ?? [])
         {
@@ -421,7 +438,7 @@ public sealed partial class FlowBuilder
 
             var detail = edge.Basis is "Convention" or "NameMatch" ? $"{edge.Evidence} (basis: {edge.Basis})" : edge.Evidence;
 
-            state.Terminals.TryAdd($"{kind}|{target}|{detail}", new FlowTerminal(kind, target, detail, Normalise(type.Source.Path), edge.Line ?? 0));
+            state.Terminals.TryAdd($"{step:0000}|{kind}|{target}|{detail}", new FlowTerminal(step, kind, target, detail, Normalise(type.Source.Path), edge.Line ?? 0));
         }
     }
 
@@ -494,7 +511,7 @@ public sealed partial class FlowBuilder
             }
         }
 
-        var candidates = MethodsNamed(types.Where(type => type.Type.Methods.Any(method => method.Name.Equals(callee, StringComparison.OrdinalIgnoreCase))).ToList(), callee, "by name");
+        var candidates = MethodsNamed(typesWithMethod.GetValueOrDefault(callee) ?? [], callee, "by name");
 
         if (candidates.Count == 0)
         {
@@ -601,9 +618,7 @@ public sealed partial class FlowBuilder
                 continue;
             }
 
-            var implementers = types
-                .Where(type => type.Type.Kind != "Interface" && type.Type.Bases.Any(@base => @base.SimpleName.Equals(target.Type.Type.Name, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            var implementers = implementersOf.GetValueOrDefault(target.Type.Type.Name) ?? [];
 
             result.AddRange(MethodsNamed(implementers, callee, $"implementation of {target.Type.Type.Name}"));
         }

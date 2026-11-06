@@ -13,11 +13,15 @@ public sealed record Component(
 
 public sealed record ComponentFact(string Statement, string Where);
 
+/// <summary>The component a graph node belongs to.</summary>
+public sealed record ComponentRef(string Unit, string Name);
+
 public sealed record ComponentMap(
     IReadOnlyList<Component> Components,
     IReadOnlyList<ComponentFact> Loops,
     IReadOnlyList<ComponentFact> DirectReaches,
-    IReadOnlyList<ComponentFact> MostUsed);
+    IReadOnlyList<ComponentFact> MostUsed,
+    IReadOnlyDictionary<string, ComponentRef> OfNode);
 
 /// <summary>
 /// Groups the code of each part by folder and shows how the groups depend on each other. A component is the first folder below the
@@ -110,7 +114,8 @@ public static class ComponentMapBuilder
             components,
             Loops(dependsOn, Order),
             DirectReaches(graph, nodeById),
-            MostUsed(components));
+            MostUsed(components),
+            keyOfNode.ToDictionary(item => item.Key, item => new ComponentRef(item.Value.Unit, item.Value.Name), StringComparer.Ordinal));
     }
 
     private static string Qualified(Key key) => $"{CustomerSummaryBuilder.DisplayName(key.Unit)}: {key.Name}";
@@ -220,8 +225,9 @@ public static class ComponentMapBuilder
             .Select(loop =>
             {
                 var names = string.Join(", ", loop.Select(Qualified));
+                var shown = string.Join(", ", loop.Take(8).Select(Qualified)) + (loop.Count > 8 ? $" and {loop.Count - 8} more" : "");
 
-                return new ComponentFact($"These components depend on each other in a loop: {names}.", names);
+                return new ComponentFact($"{loop.Count} components depend on each other in a loop, directly or through the others: {shown}.", names);
             })
             .ToList();
     }

@@ -5,8 +5,10 @@ namespace LegacyDotNetModernisationAgent.Flows;
 /// <summary>Renders the flow set as Markdown: one section per entry point, grouped by deployable unit. Ordering and wording are fixed so a run is byte-stable.</summary>
 public static class FlowWriter
 {
-    public static string Markdown(FlowSet set)
+    public static string Markdown(FlowSet set, Func<string, string>? partName = null)
     {
+        partName ??= unit => unit;
+
         var text = new StringBuilder();
 
         text.Append("# Flows: ").Append(set.Repository).Append("\n\nCommit ").Append(set.CommitSha).Append(".\n\n");
@@ -23,6 +25,9 @@ public static class FlowWriter
             foreach (var flow in unit)
             {
                 text.Append("\n### ").Append(flow.EntryType).Append('.').Append(flow.EntryMethod).Append("\n\n");
+                AppendStory(text, FlowNarrative.Tell(flow, partName, "the technical detail below"));
+
+                text.Append("**Technical detail**\n\n");
                 text.Append("- **Starts as:** ").Append(flow.EntryKind).Append(" (").Append(flow.EntryEvidence).Append(")\n");
 
                 if (flow.Inputs.Count > 0)
@@ -32,7 +37,7 @@ public static class FlowWriter
 
                 if (flow.Access.Count > 0)
                 {
-                    text.Append("- **Declared access that mentions it:** ").Append(string.Join("; ", flow.Access)).Append('\n');
+                    text.Append("- **Declared access that mentions it:** ").Append(string.Join("; ", flow.Access.Select(rule => $"{rule.Source}: {rule.Target} {rule.Operation} {rule.Principals}".TrimEnd()))).Append('\n');
                 }
 
                 text.Append("- **Methods reached, in call order (indented by call depth):**\n");
@@ -71,4 +76,34 @@ public static class FlowWriter
 
         return text.ToString();
     }
+
+    private static void AppendStory(StringBuilder text, FlowStory story)
+    {
+        void Lines(string keyword, IEnumerable<string> lines)
+        {
+            var first = true;
+
+            foreach (var line in lines)
+            {
+                var plain = line.StartsWith("And ", StringComparison.Ordinal) ? line[4..] : line;
+
+                text.Append(first ? $"**{keyword}** " : "**And** ").Append(plain).Append("  \n");
+                first = false;
+            }
+        }
+
+        Lines("Given", story.Given);
+        Lines("When", story.When);
+        Lines("Then", story.Then);
+
+        text.Append('\n');
+
+        foreach (var caveat in story.Caveats)
+        {
+            text.Append("> ").Append(caveat).Append("  \n");
+        }
+
+        text.Append('\n');
+    }
+
 }

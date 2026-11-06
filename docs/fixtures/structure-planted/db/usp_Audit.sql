@@ -1,0 +1,6 @@
+CREATE PROCEDURE dbo.usp_Audit
+AS
+BEGIN
+    SELECT * FROM dbo.AuditLog;
+END
+GO

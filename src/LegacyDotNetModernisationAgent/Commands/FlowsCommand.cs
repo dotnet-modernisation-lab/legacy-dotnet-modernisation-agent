@@ -22,7 +22,7 @@ public sealed class FlowsCommand
         Directory.CreateDirectory(artifactsDirectory);
 
         await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "flows.json"), JsonSerializer.Serialize(flows, JsonOptions).Replace("\r\n", "\n", StringComparison.Ordinal), cancellationToken);
-        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "flows.md"), FlowWriter.Markdown(flows), cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "flows.md"), FlowWriter.Markdown(flows, Strategy.CustomerSummaryBuilder.DisplayName), cancellationToken);
 
         Console.WriteLine($"{assessment.RepositoryName}: {flows.Flows.Count} flow(s) from {flows.Flows.Select(flow => flow.Unit).Distinct().Count()} part(s)");
         Console.WriteLine($"Wrote flows.json and flows.md to {artifactsDirectory}");

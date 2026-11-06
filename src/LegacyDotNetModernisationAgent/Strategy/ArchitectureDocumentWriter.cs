@@ -20,7 +20,7 @@ public static class ArchitectureDocumentWriter
     private const string Muted = "5B6770";
     private const string Navy = "1F3A5F";
 
-    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, ComponentMap components, (byte[] Png, int Width, int Height)? diagram)
+    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, ComponentMap components, DataTouchMap data, (byte[] Png, int Width, int Height)? diagram)
     {
         using var document = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
 
@@ -130,6 +130,58 @@ public static class ArchitectureDocumentWriter
             body.Append(CustomerSummaryWriter.Bullet("No loops between components and no presentation code depending directly on data access were found."));
         }
 
+        // ---- Data touched -----------------------------------------------------------------------------------
+        body.Append(Mark(CustomerSummaryWriter.Heading("Data touched"), "Data touched", 1));
+
+        foreach (var note in data.Notes)
+        {
+            body.Append(CustomerSummaryWriter.Para(note, size: 19, colour: Muted, after: 60));
+        }
+
+        if (data.Rows.Count > 0)
+        {
+            var shown = data.Rows.Take(MaxDataRows).ToList();
+
+            if (data.Parts.Count <= DataTouchWriter.MaxMatrixColumns)
+            {
+                var widths = new List<int> { 30, 10 };
+                widths.AddRange(Enumerable.Repeat(40 / Math.Max(1, data.Parts.Count), data.Parts.Count));
+                widths.Add(100 - widths.Sum());
+
+                body.Append(CustomerSummaryWriter.Table(
+                    new[] { "Data object", "Kind" }.Concat(data.Parts.Select(part => part == DataTouchBuilder.NotReached ? "No entry point" : CustomerSummary_DisplayName(part))).Append("Written by").ToArray(),
+                    widths.ToArray(),
+                    shown.Select(row => new[] { row.Name, row.Kind }.Concat(data.Parts.Select(part => DataTouchWriter.Cell(row, part))).Append(ComponentMapWriter.Join(row.WrittenBy, 3)).ToArray()).ToList()));
+            }
+            else
+            {
+                body.Append(CustomerSummaryWriter.Table(
+                    ["Data object", "Kind", "Touched by", "Written by"],
+                    [30, 10, 40, 20],
+                    shown.Select(row => new[] { row.Name, row.Kind, DataTouchWriter.Touchers(row), ComponentMapWriter.Join(row.WrittenBy, 3) }).ToList()));
+            }
+
+            if (data.Rows.Count > shown.Count)
+            {
+                body.Append(CustomerSummaryWriter.Para($"{data.Rows.Count - shown.Count} further data object(s) are listed in data-touch.md.", size: 18, colour: Muted, after: 60, before: 40));
+            }
+
+            foreach (var row in data.Rows.Where(row => row.Note is not null))
+            {
+                body.Append(CustomerSummaryWriter.Bullet($"{row.Name}: {row.Note}."));
+            }
+
+            if (data.SharedWrites.Count > 0)
+            {
+                body.Append(CustomerSummaryWriter.Para("Written from more than one part or component", size: 21, bold: true, after: 20, before: 120));
+
+                foreach (var fact in data.SharedWrites.Take(MaxDataRows))
+                {
+                    body.Append(CustomerSummaryWriter.Bullet(fact.Statement));
+                }
+            }
+        }
+
         // ---- People and outside systems -----------------------------------------------------------------
         body.Append(Mark(CustomerSummaryWriter.Heading("Who uses it, and what it reaches"), "Who uses it, and what it reaches", 1));
 
@@ -172,17 +224,51 @@ public static class ArchitectureDocumentWriter
         {
             body.Append(Mark(CustomerSummaryWriter.Para(CustomerSummary_DisplayName(unit.Key), size: 24, bold: true, colour: Navy, after: 60, before: 160), CustomerSummary_DisplayName(unit.Key), 2));
 
-            body.Append(CustomerSummaryWriter.Table(
-                ["Entry point", "Starts as", "Reads from the request", "Ends at", "Not followed"],
-                [22, 16, 16, 38, 8],
-                unit.Select(flow => new[]
-                {
-                    $"{flow.EntryType}.{flow.EntryMethod}",
-                    flow.EntryKind == "Page or control event" && flow.EntryEvidence.StartsWith("naming convention", StringComparison.Ordinal) ? $"{flow.EntryKind} (by naming convention, unconfirmed)" : flow.EntryKind,
-                    flow.Inputs.Count == 0 ? "-" : string.Join(", ", flow.Inputs),
-                    EndsAt(flow),
-                    flow.CouldNotFollow.Count == 0 ? "-" : flow.CouldNotFollow.Count.ToString()
-                }).ToList()));
+            var all = unit.ToList();
+
+            // Every entry point is in the table when there are few; many are grouped by how they start, and the full list is in flows.md.
+            if (all.Count <= MaxEntryPointRows)
+            {
+                body.Append(CustomerSummaryWriter.Table(
+                    ["Entry point", "Starts as", "Reads from the request", "Ends at", "Not followed"],
+                    [22, 16, 16, 38, 8],
+                    all.Select(flow => new[]
+                    {
+                        $"{flow.EntryType}.{flow.EntryMethod}",
+                        flow.EntryKind == "Page or control event" && flow.EntryEvidence.StartsWith("naming convention", StringComparison.Ordinal) ? $"{flow.EntryKind} (by naming convention, unconfirmed)" : flow.EntryKind,
+                        flow.Inputs.Count == 0 ? "-" : string.Join(", ", flow.Inputs),
+                        EndsAt(flow),
+                        flow.CouldNotFollow.Count == 0 ? "-" : flow.CouldNotFollow.Count.ToString()
+                    }).ToList()));
+            }
+            else
+            {
+                body.Append(CustomerSummaryWriter.Table(
+                    ["How they start", "Entry points", "What they end at"],
+                    [30, 14, 56],
+                    all.GroupBy(flow => flow.EntryKind).OrderBy(group => group.Key, StringComparer.Ordinal).Select(group => new[]
+                    {
+                        group.Key,
+                        group.Count().ToString(),
+                        string.Join("; ", group.SelectMany(flow => flow.Terminals).Select(terminal => terminal.Kind).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+                    }).ToList()));
+
+                body.Append(CustomerSummaryWriter.Para($"{all.Count} entry points are listed in flows.md. The ones below are the most connected: those that lead into another part first, then those that touch the most data, then the longest paths.", size: 18, colour: Muted, after: 60, before: 40));
+            }
+
+            var told = (all.Count <= MaxEntryPointRows ? all : all.OrderByDescending(flow => flow.Steps.Any(step => step.Boundary is not null && !step.Boundary.EndsWith(DeployableUnits.SharedName, StringComparison.Ordinal)))
+                    .ThenByDescending(flow => flow.Terminals.Count(terminal => terminal.Kind == "Data"))
+                    .ThenByDescending(flow => flow.Steps.Count)
+                    .ThenBy(flow => $"{flow.EntryType}.{flow.EntryMethod}", StringComparer.Ordinal)
+                    .Take(MaxStoriesPerPart))
+                .Where(flow => flow.Steps.Count > 1 || flow.Terminals.Count > 0)
+                .OrderBy(flow => $"{flow.EntryType}.{flow.EntryMethod}", StringComparer.Ordinal)
+                .ToList();
+
+            foreach (var flow in told)
+            {
+                AppendStory(body, flow, FlowNarrative.Tell(flow, CustomerSummary_DisplayName, "flows.md", maxCalls: 5, maxEffects: 5));
+            }
         }
 
         // ---- Journeys that cross a boundary ---------------------------------------------------------------------
@@ -269,7 +355,41 @@ public static class ArchitectureDocumentWriter
         main.Document.Save();
     }
 
+    private static void AppendStory(Body body, Flow flow, FlowStory story)
+    {
+        body.Append(CustomerSummaryWriter.Para($"{flow.EntryType}.{flow.EntryMethod}", size: 21, bold: true, colour: Navy, after: 20, before: 140));
+
+        void Lines(string keyword, IEnumerable<string> lines)
+        {
+            var first = true;
+
+            foreach (var line in lines)
+            {
+                var text = line.StartsWith("And ", StringComparison.Ordinal) ? line[4..] : line;
+
+                body.Append(new Paragraph(
+                    new ParagraphProperties(new SpacingBetweenLines { After = "20" }),
+                    CustomerSummaryWriter.Run((first ? keyword : "And") + " ", 20, true, Navy),
+                    CustomerSummaryWriter.Run(text, 20, false, "1F2D3D")));
+
+                first = false;
+            }
+        }
+
+        Lines("Given", story.Given);
+        Lines("When", story.When);
+        Lines("Then", story.Then);
+
+        foreach (var caveat in story.Caveats)
+        {
+            body.Append(CustomerSummaryWriter.Para(caveat, size: 17, colour: Muted, after: 10, indent: 280, italic: true));
+        }
+    }
+
     private const int MaxComponentsPerPart = 12;
+    private const int MaxDataRows = 25;
+    private const int MaxEntryPointRows = 15;
+    private const int MaxStoriesPerPart = 4;
 
     /// <summary>The names of the most connected components of a part, so the parts table says what is inside without counting kinds of code.</summary>
     private static string MainComponents(ComponentMap components, string areaName)

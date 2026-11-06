@@ -228,7 +228,14 @@ public static class CustomerSummaryWriter
 
         if (indent > 0)
         {
-            properties.Append(new Indentation { Left = indent.ToString(), Hanging = hanging > 0 ? hanging.ToString() : null });
+            var indentation = new Indentation { Left = indent.ToString() };
+
+            if (hanging > 0)
+            {
+                indentation.Hanging = hanging.ToString();
+            }
+
+            properties.Append(indentation);
         }
 
         return new Paragraph(properties, Run(text, size, bold, colour, italic));

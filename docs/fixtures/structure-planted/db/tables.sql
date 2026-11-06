@@ -1,0 +1,4 @@
+CREATE TABLE dbo.Orders (Id INT NOT NULL)
+GO
+CREATE TABLE dbo.AuditLog (Id INT NOT NULL)
+GO
