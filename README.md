@@ -27,6 +27,7 @@ dotnet run --project src/LegacyDotNetModernisationAgent -- assess <repositoryPat
 Writes, deterministically (byte-identical across runs):
 
 - `Artifacts/legacy-project-assessment.json`: facts (projects, findings, binary evidence, WCF, data access, type structure)
+- `diagram <repositoryPath> [artifactsDirectory]` draws the architecture from the deterministic facts (no model): `architecture-overview.svg` and `.mmd` show the deployable areas, their size, waiting decisions and what depends on what; `architecture.md` has the overview plus a detail view per area (Mermaid, renders on GitHub); one `architecture-detail-*.mmd` per area. Output is identical on every run.
 - `Artifacts/legacy-dependency-graph.json`: nodes, typed edges with basis and evidence, layer boundaries, impact sets, page-to-stored-procedure paths
 - `Artifacts/migration-analysis.json`: migration characteristics per component (rule ID, reason, evidence), human decision gates, potentially portable areas
 

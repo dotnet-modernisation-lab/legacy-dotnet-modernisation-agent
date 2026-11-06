@@ -7,6 +7,7 @@ const string Usage = """
                                                               needs the solution built and IIS Express installed
       strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|foundry|file:<strategy.json>]
                                                               evidence bundle, strategy, validation, Markdown and Word report
+      diagram <repositoryPath> [artifactsDirectory]           architecture overview (SVG, Mermaid) and a detail view per area
     """;
 
 using var cancellationTokenSource = new CancellationTokenSource();
@@ -21,7 +22,7 @@ var verify = args.Contains("--verify", StringComparer.OrdinalIgnoreCase);
 var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
 var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
 
-if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy"))
+if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy" or "diagram"))
 {
     Console.Error.WriteLine(Usage);
 
@@ -37,6 +38,11 @@ try
         await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
 
         return 0;
+    }
+
+    if (command == "diagram")
+    {
+        return await new DiagramCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
     }
 
     if (command == "strategy")
