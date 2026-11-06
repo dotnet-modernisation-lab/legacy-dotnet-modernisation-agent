@@ -35,7 +35,13 @@ public sealed class DiagramCommand
         var page = new StringBuilder();
         page.Append("# Architecture: ").Append(input.Repository).Append("\n\n");
         page.Append("Commit ").Append(input.CommitSha).Append(". Drawn from the deterministic analysis; every box and arrow is something the tool found.\n\n");
-        page.Append("## Overview\n\nArrows point from an area to the area it depends on. Colour shows relative size; there is no overall size for the estate. People and callers are deduced from what each project is; who they are and where they connect from is not visible in a repository.\n\n```mermaid\n").Append(overviewMermaid).Append("```\n");
+        page.Append("## Overview\n\n![Architecture overview](architecture-overview.svg)\n\n");
+        page.Append("### How to read this\n\n");
+        page.Append("- **Cards** are the deployable parts of the estate. The coloured bar and badge show relative size, and the chips show confidence and open decisions. There is no overall size for the estate.\n");
+        page.Append("- **People and callers** (left) are deduced from what each project is. Who they are and where they connect from is not visible in a repository, so the diagram marks it as not known.\n");
+        page.Append("- **The dashed boundary** is the estate found in the repository. **Outside the estate** (right) holds the external systems the code reaches.\n");
+        page.Append("- **Arrows** point from a part to the part it depends on, labelled with the kind of link.\n\n");
+        page.Append("### Drill-down (Mermaid)\n\nThe same overview as a Mermaid diagram, then one diagram per part below.\n\n```mermaid\n").Append(overviewMermaid).Append("```\n");
 
         foreach (var area in input.WorkAreas.Where(area => area.Kind != DeployableUnits.NotPlacedKind).OrderBy(area => area.Order))
         {
