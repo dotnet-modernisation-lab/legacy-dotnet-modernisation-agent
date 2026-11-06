@@ -1,0 +1,12 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+    <OutputType>Library</OutputType><AssemblyName>Shop.Admin</AssemblyName><TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+  </PropertyGroup>
+  <ItemGroup><Reference Include="System.Web" /></ItemGroup>
+  <ItemGroup>
+    <Content Include="Admin.aspx" />
+    <Compile Include="Admin.aspx.vb" />
+    <ProjectReference Include="..\Shop.Logic\Shop.Logic.csproj" />
+  </ItemGroup>
+</Project>

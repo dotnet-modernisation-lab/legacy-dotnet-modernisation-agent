@@ -33,7 +33,7 @@ Evidence strength:
 | 21 | Third-party and binary dependencies | Unsupported libraries, licences, 32-bit or COM components, no source | Binary references, missing binaries, framework-assembly dependencies | Detected (partial) | Human |
 | 22 | Build, CI and packaging | Build tooling, restore, signing, versioning | Builds are decided by MSBuild outside the tool | None (by design) | Human |
 | 23 | Deployment and hosting | IIS settings, app pools, certificates, Windows-only assumptions, environments | IIS config sections in `web.config` only | Detected (partial) | Human |
-| 24 | Behaviour baseline | What the system does now, so the new one can be checked | Probe and contracts on the sample; verifiable, evidence-grade deferred | Observed / Derived | Human approves |
+| 24 | Behaviour baseline | What the system does now, so the new one can be checked | Flows read from the code (`flows`): entry points, call paths followed by name, data, session, configuration and declared access, with the points the tool could not follow. No run-time observation yet; a service-description check and a user-supplied scenario file are next | Derived | Human approves |
 | 25 | Test coverage | Existing tests (usually none) | Deliberately not assumed | None (by design) | n/a |
 | 26 | Compliance and audit | Audit trails, data protection, residency, retention | None | None | Human |
 | 27 | Non-technical | Ownership, usage, release freedom, team skills, budget | None; traffic and log ingestion deferred | None | Human |

@@ -18,6 +18,7 @@
       ],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "CustomerData",
           "Method": "DataPortal_Fetch",
           "Basis": "entry point",
@@ -26,6 +27,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "LegacyCustomerDal",
           "Method": "GetCustomerById",
           "Basis": "by name",
@@ -34,6 +36,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "LegacyCustomerDal",
           "Method": "ExecuteCustomerInfoSelectById",
           "Basis": "same type",
@@ -42,6 +45,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "LegacyCustomerDal",
           "Method": "LoadCustomers",
           "Basis": "same type",
@@ -50,6 +54,7 @@
           "Boundary": null
         },
         {
+          "Depth": 4,
           "Type": "LegacyCustomerDal",
           "Method": "ResolveFixturePath",
           "Basis": "same type",
@@ -90,7 +95,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 9,
-      "Coverage": "5 step(s) followed; 9 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "5 step(s) followed; 9 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyDataService:LegacyCustomerService.GetCustomer",
@@ -104,6 +109,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "LegacyCustomerService",
           "Method": "GetCustomer",
           "Basis": "entry point",
@@ -112,6 +118,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "LegacyCustomerService",
           "Method": "ValidateTrustedSubsystem",
           "Basis": "same type",
@@ -120,6 +127,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "CustomerData",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -128,6 +136,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "CustomerData",
           "Method": "DataPortal_Fetch",
           "Basis": "framework convention (business-object framework data portal)",
@@ -136,6 +145,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "LegacyCustomerDal",
           "Method": "GetCustomerById",
           "Basis": "by name",
@@ -144,6 +154,7 @@
           "Boundary": null
         },
         {
+          "Depth": 4,
           "Type": "LegacyCustomerDal",
           "Method": "ExecuteCustomerInfoSelectById",
           "Basis": "same type",
@@ -152,6 +163,7 @@
           "Boundary": null
         },
         {
+          "Depth": 5,
           "Type": "LegacyCustomerDal",
           "Method": "LoadCustomers",
           "Basis": "same type",
@@ -160,6 +172,7 @@
           "Boundary": null
         },
         {
+          "Depth": 6,
           "Type": "LegacyCustomerDal",
           "Method": "ResolveFixturePath",
           "Basis": "same type",
@@ -168,6 +181,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "UpgradeMarker",
           "Method": "GetUpgradeStatus",
           "Basis": "named type",
@@ -257,7 +271,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 17,
-      "Coverage": "9 step(s) followed; 17 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "9 step(s) followed; 17 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:AjaxToolkitPage.SubmitButton_Click",
@@ -271,6 +285,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "AjaxToolkitPage",
           "Method": "SubmitButton_Click",
           "Basis": "entry point",
@@ -282,7 +297,7 @@
       "Terminals": [],
       "CouldNotFollow": [],
       "UnfollowedCalls": 2,
-      "Coverage": "1 step(s) followed; 2 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "1 step(s) followed; 2 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:CompatibilityPage.Page_Load",
@@ -296,6 +311,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "CompatibilityPage",
           "Method": "Page_Load",
           "Basis": "entry point",
@@ -315,7 +331,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 1,
-      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:CustomerInfo.DataPortal_Fetch",
@@ -333,6 +349,7 @@
       ],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "CustomerInfo",
           "Method": "DataPortal_Fetch",
           "Basis": "entry point",
@@ -341,6 +358,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "CustomerInfo",
           "Method": "IsAuthorizedUser",
           "Basis": "same type",
@@ -349,6 +367,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "CustomerInfo",
           "Method": "IsAuthenticatedUser",
           "Basis": "same type",
@@ -357,6 +376,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "LoginPage",
           "Method": "GetCurrentRole",
           "Basis": "named type",
@@ -365,6 +385,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "WcfClientFacade",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -373,6 +394,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "LegacyCustomerService",
           "Method": "GetCustomer",
           "Basis": "implementation of ILegacyCustomerService",
@@ -381,6 +403,7 @@
           "Boundary": "crosses into WCF service (LegacyDataServiceHost)"
         },
         {
+          "Depth": 3,
           "Type": "LegacyCustomerService",
           "Method": "ValidateTrustedSubsystem",
           "Basis": "same type",
@@ -389,6 +412,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "CustomerData",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -397,6 +421,7 @@
           "Boundary": null
         },
         {
+          "Depth": 4,
           "Type": "CustomerData",
           "Method": "DataPortal_Fetch",
           "Basis": "framework convention (business-object framework data portal)",
@@ -405,6 +430,7 @@
           "Boundary": null
         },
         {
+          "Depth": 5,
           "Type": "LegacyCustomerDal",
           "Method": "GetCustomerById",
           "Basis": "by name",
@@ -413,6 +439,7 @@
           "Boundary": null
         },
         {
+          "Depth": 6,
           "Type": "LegacyCustomerDal",
           "Method": "ExecuteCustomerInfoSelectById",
           "Basis": "same type",
@@ -421,6 +448,7 @@
           "Boundary": null
         },
         {
+          "Depth": 7,
           "Type": "LegacyCustomerDal",
           "Method": "LoadCustomers",
           "Basis": "same type",
@@ -429,6 +457,7 @@
           "Boundary": null
         },
         {
+          "Depth": 8,
           "Type": "LegacyCustomerDal",
           "Method": "ResolveFixturePath",
           "Basis": "same type",
@@ -437,6 +466,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "UpgradeMarker",
           "Method": "GetUpgradeStatus",
           "Basis": "named type",
@@ -554,7 +584,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 31,
-      "Coverage": "14 step(s) followed; 31 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "14 step(s) followed; 31 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:DataAccessPage.Page_Load",
@@ -573,6 +603,7 @@
       ],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "DataAccessPage",
           "Method": "Page_Load",
           "Basis": "entry point",
@@ -581,6 +612,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "LoginPage",
           "Method": "GetCurrentRole",
           "Basis": "named type",
@@ -589,6 +621,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "CustomerInfo",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -597,6 +630,7 @@
           "Boundary": null
         },
         {
+          "Depth": 2,
           "Type": "CustomerInfo",
           "Method": "DataPortal_Fetch",
           "Basis": "framework convention (business-object framework data portal)",
@@ -605,6 +639,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "CustomerInfo",
           "Method": "IsAuthorizedUser",
           "Basis": "same type",
@@ -613,6 +648,7 @@
           "Boundary": null
         },
         {
+          "Depth": 4,
           "Type": "CustomerInfo",
           "Method": "IsAuthenticatedUser",
           "Basis": "same type",
@@ -621,6 +657,7 @@
           "Boundary": null
         },
         {
+          "Depth": 3,
           "Type": "WcfClientFacade",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -629,6 +666,7 @@
           "Boundary": null
         },
         {
+          "Depth": 4,
           "Type": "LegacyCustomerService",
           "Method": "GetCustomer",
           "Basis": "implementation of ILegacyCustomerService",
@@ -637,6 +675,7 @@
           "Boundary": "crosses into WCF service (LegacyDataServiceHost)"
         },
         {
+          "Depth": 5,
           "Type": "LegacyCustomerService",
           "Method": "ValidateTrustedSubsystem",
           "Basis": "same type",
@@ -645,6 +684,7 @@
           "Boundary": null
         },
         {
+          "Depth": 5,
           "Type": "CustomerData",
           "Method": "GetCustomer",
           "Basis": "named type",
@@ -653,6 +693,7 @@
           "Boundary": null
         },
         {
+          "Depth": 6,
           "Type": "CustomerData",
           "Method": "DataPortal_Fetch",
           "Basis": "framework convention (business-object framework data portal)",
@@ -661,6 +702,7 @@
           "Boundary": null
         },
         {
+          "Depth": 7,
           "Type": "LegacyCustomerDal",
           "Method": "GetCustomerById",
           "Basis": "by name",
@@ -669,6 +711,7 @@
           "Boundary": null
         },
         {
+          "Depth": 8,
           "Type": "LegacyCustomerDal",
           "Method": "ExecuteCustomerInfoSelectById",
           "Basis": "same type",
@@ -677,6 +720,7 @@
           "Boundary": null
         },
         {
+          "Depth": 9,
           "Type": "LegacyCustomerDal",
           "Method": "LoadCustomers",
           "Basis": "same type",
@@ -685,6 +729,7 @@
           "Boundary": null
         },
         {
+          "Depth": 10,
           "Type": "LegacyCustomerDal",
           "Method": "ResolveFixturePath",
           "Basis": "same type",
@@ -693,6 +738,7 @@
           "Boundary": null
         },
         {
+          "Depth": 5,
           "Type": "UpgradeMarker",
           "Method": "GetUpgradeStatus",
           "Basis": "named type",
@@ -824,7 +870,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 39,
-      "Coverage": "16 step(s) followed; 39 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "16 step(s) followed; 39 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:DefaultPage.Page_Load",
@@ -838,6 +884,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "DefaultPage",
           "Method": "Page_Load",
           "Basis": "entry point",
@@ -849,7 +896,7 @@
       "Terminals": [],
       "CouldNotFollow": [],
       "UnfollowedCalls": 0,
-      "Coverage": "1 step(s) followed; 0 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "1 step(s) followed; 0 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:LoginPage.LoginButton_Click",
@@ -865,6 +912,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "LoginPage",
           "Method": "LoginButton_Click",
           "Basis": "entry point",
@@ -933,7 +981,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 11,
-      "Coverage": "1 step(s) followed; 11 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "1 step(s) followed; 11 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:LoginPage.Page_Load",
@@ -947,6 +995,7 @@
       "Access": [],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "LoginPage",
           "Method": "Page_Load",
           "Basis": "entry point",
@@ -966,7 +1015,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 1,
-      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "1 step(s) followed; 1 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     },
     {
       "Id": "flow:LegacyWebFormsSample:ProfilePage.Page_Load",
@@ -983,6 +1032,7 @@
       ],
       "Steps": [
         {
+          "Depth": 0,
           "Type": "ProfilePage",
           "Method": "Page_Load",
           "Basis": "entry point",
@@ -991,6 +1041,7 @@
           "Boundary": null
         },
         {
+          "Depth": 1,
           "Type": "LoginPage",
           "Method": "GetCurrentRole",
           "Basis": "named type",
@@ -1045,7 +1096,7 @@
       ],
       "CouldNotFollow": [],
       "UnfollowedCalls": 12,
-      "Coverage": "2 step(s) followed; 12 call(s) not followed because they go to the framework or to code outside the repository; 0 point(s) where the tool stopped for a reason listed."
+      "Coverage": "2 step(s) followed; 12 call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); 0 point(s) where the tool stopped for a reason listed."
     }
   ],
   "Notes": [

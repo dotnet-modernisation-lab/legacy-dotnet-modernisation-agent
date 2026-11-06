@@ -1,6 +1,6 @@
 # Flow contracts: design
 
-Status: design only, nothing built. Replaces the sample-specific behaviour probe (see `tasks/todo.md`, section H).
+Status: first cut built (`flows` command). Replaces the sample-specific behaviour probe, which has been deleted (see `tasks/todo.md`, section H). Built: entry points, call following, terminals, gaps, markup and `Handles` wiring. Not built: comparison against migrated code, the service-description check, the scenario interpreter.
 
 ## 1. Why
 
@@ -89,7 +89,7 @@ Comparison against migrated code reuses the same extractor on the target (it is 
 - `flows.json` (machine form) and `flows.md` (readable, one section per entry point grouped by deployable unit).
 - Ordering is by unit, node id and method name; ids are stable; output is byte-identical across runs.
 - No estate-wide totals. Counts appear only per flow.
-- `behave` becomes: static flows, plus the service-description check (section 9), plus any scenario supplied by the user. The old contracts named after the sample are removed, and the saved baseline is re-recorded.
+- `flows` is the command. The `behave` command and its contracts named after the sample are gone; the service-description check (section 9) and the scenario interpreter are still to build. The sample's former checks are kept as data in `docs/examples/legacy-webforms-migration/behaviour-scenarios.json`.
 - Customer summary gains plain-language flow lines later; internal ids stay out of it.
 
 ## 9. The parts that can be checked by running
@@ -104,6 +104,8 @@ Comparison against migrated code reuses the same extractor on the target (it is 
 - Resolution is by name, so common method names (`Save`, `Load`) will be ambiguous in a large estate. They are reported as ambiguous, not guessed.
 - Reflection, dependency injection containers, event wiring done at run time and dynamic data-portal dispatch end a flow with "could not follow".
 - Event wiring is needed to find handlers reliably. Until markup and `Handles` are read, handlers are found by naming convention and labelled so.
+- Constructors, property accessors and lambdas are not indexed, so calls into them are counted as not followed. Calls through a variable are followed only into a type the calling code refers to by name, or a service contract it opens a channel to.
+- Overloads are treated as one method. Method parameters are not yet read as inputs. Timers and threads that start work are not yet entry points.
 - A flow shows what the code can do, not how often or with which data. It is not a test result.
 
 ## 11. How it will be proved without unit tests

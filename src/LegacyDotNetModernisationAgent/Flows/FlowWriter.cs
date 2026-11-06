@@ -35,13 +35,13 @@ public static class FlowWriter
                     text.Append("- **Declared access that mentions it:** ").Append(string.Join("; ", flow.Access)).Append('\n');
                 }
 
-                text.Append("- **Path:**\n");
+                text.Append("- **Methods reached, in call order (indented by call depth):**\n");
 
                 for (var i = 0; i < flow.Steps.Count; i++)
                 {
                     var step = flow.Steps[i];
 
-                    text.Append("  ").Append(i + 1).Append(". `").Append(step.Type).Append('.').Append(step.Method).Append("` (").Append(step.Basis).Append("; ")
+                    text.Append(new string(' ', 2 + (step.Depth * 2))).Append(i + 1).Append(". `").Append(step.Type).Append('.').Append(step.Method).Append("` (").Append(step.Basis).Append("; ")
                         .Append(step.Location).Append(':').Append(step.Line).Append(')').Append(step.Boundary is null ? "" : $" **{step.Boundary}**").Append('\n');
                 }
 

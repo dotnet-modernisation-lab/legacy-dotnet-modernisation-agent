@@ -1,7 +1,7 @@
 namespace LegacyDotNetModernisationAgent.Flows;
 
-/// <summary>One method the flow passes through. Basis says how the tool knew the call went there; nothing is followed on a guess.</summary>
-public sealed record FlowStep(string Type, string Method, string Basis, string Location, int Line, string? Boundary);
+/// <summary>One method the flow reaches, in the order the tool followed calls; Depth is how many calls from the entry point it is. Basis says how the tool knew the call went there; nothing is followed on a guess.</summary>
+public sealed record FlowStep(int Depth, string Type, string Method, string Basis, string Location, int Line, string? Boundary);
 
 /// <summary>Where a flow stops being code the tool can follow: data, an outside system, session, configuration or authentication.</summary>
 public sealed record FlowTerminal(string Kind, string Target, string Detail, string Location, int Line);

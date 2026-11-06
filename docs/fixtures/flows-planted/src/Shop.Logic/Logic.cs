@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ServiceModel;
 using System.Data.SqlClient;
 
 namespace Shop.Logic
@@ -13,9 +15,11 @@ namespace Shop.Logic
     {
         private readonly IPayment payment;
         private readonly BasketStore store = new BasketStore();
+        private readonly List<string> items = new List<string>();
 
         public void Checkout(string quantity)
         {
+            items.Add(quantity);
             store.Save(quantity);
             payment.Pay(quantity);
             var plugin = Activator.CreateInstance(Type.GetType("Shop.Plugins.Audit"));
@@ -31,6 +35,28 @@ namespace Shop.Logic
         {
             if (depth > 0) { Walk(depth - 1); }
         }
+    }
+
+    public class AuditTrail
+    {
+        public void Add(string entry) { }
+    }
+
+    [ServiceContract]
+    public interface IPriceService
+    {
+        [OperationContract]
+        decimal PriceOf(string sku);
+    }
+
+    public class PriceService : IPriceService
+    {
+        public decimal PriceOf(string sku) { return new PriceBook().Lookup(sku); }
+    }
+
+    public class PriceBook
+    {
+        public decimal Lookup(string sku) { return 1m; }
     }
 
     public class BasketStore

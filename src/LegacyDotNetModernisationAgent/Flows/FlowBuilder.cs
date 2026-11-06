@@ -278,8 +278,9 @@ public sealed partial class FlowBuilder
 
         var rules = assessment.Authentication.AccessRules
             .Where(rule => rule.Location.Equals(entry.Type.Source.Path, StringComparison.OrdinalIgnoreCase)
-                           || rule.Target.Contains(entry.Type.Type.Name, StringComparison.OrdinalIgnoreCase)
-                           || rule.Target.Contains(Path.GetFileNameWithoutExtension(entry.Type.Source.Path), StringComparison.OrdinalIgnoreCase))
+                           || TargetSegments(rule.Target).Any(segment => segment.Equals(entry.Type.Type.Name, StringComparison.OrdinalIgnoreCase)
+                               || segment.Equals(Path.GetFileNameWithoutExtension(entry.Type.Source.Path), StringComparison.OrdinalIgnoreCase)
+                               || segment.Equals(Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(entry.Type.Source.Path)), StringComparison.OrdinalIgnoreCase)))
             .Select(rule => $"{rule.Source}: {rule.Target} {rule.Operation} {rule.Principals}".TrimEnd())
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
@@ -301,7 +302,7 @@ public sealed partial class FlowBuilder
             state.Terminals.Values.ToList(),
             state.Gaps.Values.ToList(),
             state.Unfollowed,
-            $"{state.Steps.Count} step(s) followed; {state.Unfollowed} call(s) not followed because they go to the framework or to code outside the repository; {state.Gaps.Count} point(s) where the tool stopped for a reason listed.");
+            $"{state.Steps.Count} step(s) followed; {state.Unfollowed} call(s) not followed because they go to the framework, to code outside the repository, or to members the tool does not index (constructors, properties, lambdas); {state.Gaps.Count} point(s) where the tool stopped for a reason listed.");
     }
 
     private void Follow(TypeDef type, MethodFact method, string basis, int depth, State state, string? previousUnit)
@@ -322,7 +323,7 @@ public sealed partial class FlowBuilder
 
         var unit = UnitOf(type);
 
-        state.Steps.Add(new FlowStep(type.Type.Name, method.Name, basis, type.Source.Path, method.StartLine,
+        state.Steps.Add(new FlowStep(depth, type.Type.Name, method.Name, basis, type.Source.Path, method.StartLine,
             previousUnit is not null && previousUnit != unit ? $"crosses into {unit}" : null));
 
         CollectTerminals(type, method, state);
@@ -380,6 +381,10 @@ public sealed partial class FlowBuilder
         .DistinctBy(call => (call.Line, call.CalleeText))
         .OrderBy(call => call.Line)
         .ThenBy(call => call.CalleeText, StringComparer.Ordinal);
+
+    /// <summary>Whole name segments of a rule target ("Pages/DataAccess.aspx", "Order.Total"), so a rule for OrderLine is not attributed to Order.</summary>
+    private static string[] TargetSegments(string target) =>
+        target.Split(['.', '/', '\\', ':', ' ', '='], StringSplitOptions.RemoveEmptyEntries);
 
     private static string Accessor(string calleeText) =>
         calleeText.Contains('.', StringComparison.Ordinal) ? calleeText[(calleeText.LastIndexOf('.') + 1)..] : calleeText;
@@ -491,10 +496,21 @@ public sealed partial class FlowBuilder
             return NotFound;
         }
 
+        // A call through a variable is followed only into a type this code can reach: one it refers to by name, or a service
+        // contract it opens a channel to. Method names such as Add or Save are common to framework types, so a name match alone is a guess.
+        var contracts = assessment.Wcf.Clients.Where(client => client.Class.Equals(caller.Type.Name, StringComparison.OrdinalIgnoreCase)).Select(client => client.Contract).ToList();
+        var used = identifiersByType.GetValueOrDefault(caller.Key);
+
+        candidates = candidates.Where(candidate => (used?.Contains(candidate.Type.Type.Name) ?? false) || contracts.Contains(candidate.Type.Type.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+
+        if (candidates.Count == 0)
+        {
+            return NotFound;
+        }
+
         if (candidates.DistinctBy(candidate => candidate.Type.Key).Count() > 1)
         {
             // A class that opens a channel to a service contract calls through that contract: the analysis already found the link.
-            var contracts = assessment.Wcf.Clients.Where(client => client.Class.Equals(caller.Type.Name, StringComparison.OrdinalIgnoreCase)).Select(client => client.Contract).ToList();
             var viaContract = candidates.Where(candidate => contracts.Contains(candidate.Type.Type.Name, StringComparer.OrdinalIgnoreCase)).ToList();
 
             if (viaContract.Count > 0)
@@ -503,8 +519,7 @@ public sealed partial class FlowBuilder
             }
         }
 
-        if (candidates.DistinctBy(candidate => candidate.Type.Key).Count() > 1
-            && identifiersByType.GetValueOrDefault(caller.Key) is { } used)
+        if (candidates.DistinctBy(candidate => candidate.Type.Key).Count() > 1 && used is not null)
         {
             // Narrow by the types this code refers to, before interfaces are replaced by their implementations,
             // because code names the interface it calls through, not the class behind it.

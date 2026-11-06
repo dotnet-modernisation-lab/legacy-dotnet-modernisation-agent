@@ -7,3 +7,8 @@
 - Rule: nothing in `src/` may name an application's pages, fields, users, data or services. App-specific checks live in a data file (scenarios) supplied with the estate, never in code.
 - Before claiming a part of the tool is generic, grep the whole of it for the sample's names; do not rely on having built it generically.
 - Proof: planted fixture with different names and no web app or WCF host (must report what it could not exercise), plus a zero-hit sweep of `src/` for the sample's names.
+
+## Run things only where a contract exists; read the rest from code
+- Correction: the user questioned whether any generic crawl of a legacy app can work, since it all calls onward to databases, services and sign-in. They were right.
+- Rule: derive behaviour from code (entry points, call paths, data, access) first. Run something only where a machine-readable contract exists (service descriptions) or where a person supplies the scenario. Do not propose a crawl or probe as the generic answer.
+- Rule: a name match is not a resolution. Follow a call only when the calling code can reach the target; say why when it stops.
