@@ -49,6 +49,16 @@ public static class CustomerSummaryWriter
             text.Append("- ").Append(line).Append('\n');
         }
 
+        if (summary.Journeys.Count > 0)
+        {
+            text.Append("\n## Key journeys\n\n");
+
+            foreach (var line in summary.Journeys)
+            {
+                text.Append("- ").Append(line).Append('\n');
+            }
+        }
+
         text.Append("\n## Decisions only your team can make\n\n| Decision | Why it matters | Affects |\n|---|---|---|\n");
 
         foreach (var decision in summary.Decisions)
@@ -127,6 +137,16 @@ public static class CustomerSummaryWriter
             body.Append(Bullet(line));
         }
 
+        if (summary.Journeys.Count > 0)
+        {
+            body.Append(Heading("Key journeys"));
+
+            foreach (var line in summary.Journeys)
+            {
+                body.Append(Bullet(line));
+            }
+        }
+
         body.Append(Heading("Decisions only your team can make"));
         body.Append(Table(
             ["Decision", "Why it matters", "Affects"],
@@ -196,7 +216,8 @@ public static class CustomerSummaryWriter
             new ParagraphProperties(
                 new KeepNext(),
                 new ParagraphBorders(new BottomBorder { Val = BorderValues.Single, Size = 8, Color = "9FB3CC", Space = 2 }),
-                new SpacingBetweenLines { Before = "280", After = "100" }),
+                new SpacingBetweenLines { Before = "280", After = "100" },
+                new OutlineLevel { Val = 0 }),
             Run(text, 28, true, Navy));
 
     internal static Paragraph Bullet(string text) => Para("•  " + text, size: 21, after: 60, indent: 300, hanging: 300);
@@ -223,7 +244,7 @@ public static class CustomerSummaryWriter
                 new Indentation { Left = "160", Right = "100" }),
             Run(text, 23, false, Ink));
 
-    private static Run Run(string text, int size, bool bold, string colour, bool italic = false)
+    internal static Run Run(string text, int size, bool bold, string colour, bool italic = false)
     {
         var properties = new RunProperties(new RunFonts { Ascii = "Calibri", HighAnsi = "Calibri" });
 

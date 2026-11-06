@@ -18,6 +18,7 @@ public sealed record CustomerSummary(
     IReadOnlyList<string> AtAGlance,
     IReadOnlyList<SummaryArea> Areas,
     IReadOnlyList<string> HowItFits,
+    IReadOnlyList<string> Journeys,
     IReadOnlyList<SummaryDecision> Decisions,
     IReadOnlyList<string> Risks,
     IReadOnlyList<string> NotSeen,
@@ -32,7 +33,8 @@ public static class CustomerSummaryBuilder
         MigrationAnalysis analysis,
         LegacyMigrationAnalysisInput input,
         UnitMap unitMap,
-        EstateContext context)
+        EstateContext context,
+        Flows.FlowSet? flows = null)
     {
         var areas = input.WorkAreas.OrderBy(area => area.Order).ToList();
         var unitKinds = unitMap.Units.ToDictionary(unit => unit.Name, unit => unit.Kind, StringComparer.Ordinal);
@@ -112,7 +114,11 @@ public static class CustomerSummaryBuilder
 
         foreach (var system in context.ExternalSystems)
         {
-            fits.Add($"{JoinNatural(system.UsedBy.Select(unit => $"The {DisplayKind(unitKinds[unit])} ({DisplayName(unit)})").ToList())} reaches {system.Name.ToLowerInvariant()}.");
+            var users = JoinNatural(system.UsedBy.Select(unit => $"The {DisplayKind(unitKinds[unit])} ({DisplayName(unit)})").ToList());
+
+            fits.Add(system.Category == "ExternalHttp"
+                ? $"{users} contains code that can make web calls. The analysis did not find which address it calls, so whether it reaches an outside service is a question for your team."
+                : $"{users} reaches {system.Name.ToLowerInvariant()}.");
         }
 
         foreach (var actor in context.Actors.Where(actor => actor.DeclaredFacts.Count > 0))
@@ -215,6 +221,7 @@ public static class CustomerSummaryBuilder
             atAGlance,
             summaryAreas,
             fits,
+            Journeys(flows, unitKinds),
             summaryDecisions,
             risks.Take(6).ToList(),
             notSeen,
@@ -223,6 +230,75 @@ public static class CustomerSummaryBuilder
     }
 
     /// <summary>The project name inside brackets: "Website (X)" shows as "X"; names without brackets are unchanged.</summary>
+    /// <summary>
+    /// The paths that start in one running part and lead on into another, in plain words and without identifiers. Shared libraries are
+    /// compiled into the parts that use them, so reaching them is not counted as leading on. Nothing is said when no flow crosses.
+    /// </summary>
+    private static List<string> Journeys(Flows.FlowSet? flows, Dictionary<string, string> unitKinds)
+    {
+        var lines = new List<string>();
+
+        if (flows is null)
+        {
+            return lines;
+        }
+
+        string Describe(string unit) => unitKinds.TryGetValue(unit, out var kind) ? $"{DisplayKind(kind)} ({DisplayName(unit)})" : DisplayName(unit);
+
+        var groups = flows.Flows
+            .Select(flow => (Flow: flow, Parts: flow.Steps.Where(step => step.Boundary is not null)
+                .Select(step => step.Boundary!.Replace("crosses into ", "", StringComparison.Ordinal))
+                .Where(part => part != DeployableUnits.SharedName && part != flow.Unit).Distinct(StringComparer.Ordinal).ToList()))
+            .Where(item => item.Parts.Count > 0)
+            .GroupBy(item => (item.Flow.Unit, Route: string.Join(">", item.Parts)))
+            .OrderBy(group => group.Key.Unit, StringComparer.Ordinal).ThenBy(group => group.Key.Route, StringComparer.Ordinal);
+
+        foreach (var group in groups)
+        {
+            var members = group.Select(item => item.Flow).ToList();
+            var parts = group.First().Parts;
+            var touches = new List<string>();
+
+            void Touch(string kind, string words)
+            {
+                if (members.Any(flow => flow.Terminals.Any(terminal => terminal.Kind == kind)))
+                {
+                    touches.Add(words);
+                }
+            }
+
+            Touch("Data", "the data");
+            Touch("Outside system", "outside systems");
+            Touch("Session", "session state");
+            Touch("Authentication", "sign-in or access checks");
+            Touch("Configuration", "configuration settings");
+
+            var count = members.Count;
+            var line = $"{(count == 1 ? "One entry point" : $"{count} entry points")} in the {Describe(group.Key.Unit)} lead{(count == 1 ? "s" : "")} on into the {JoinNatural(parts.Select(Describe).ToList())}.";
+
+            if (touches.Count > 0)
+            {
+                line += $" Along the way they touch {JoinNatural(touches)}.";
+            }
+
+            var unfinished = members.Count(flow => flow.CouldNotFollow.Count > 0);
+
+            if (unfinished > 0)
+            {
+                line += $" For {(unfinished == 1 ? "one of them" : $"{unfinished} of them")} the analysis could not follow every call, so a person should check the path.";
+            }
+
+            lines.Add(line);
+        }
+
+        if (lines.Count > 0)
+        {
+            lines.Add("These are the paths that have to keep working while the parts are migrated one at a time.");
+        }
+
+        return lines;
+    }
+
     internal static string DisplayName(string name)
     {
         if (name == DeployableUnits.SharedName)

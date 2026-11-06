@@ -16,8 +16,8 @@ public sealed class ArchitectureCommand
         var input = LegacyMigrationAnalysisInputBuilder.Build(assessment, graph, analysis);
         var unitMap = DeployableUnits.Build(assessment, graph);
         var context = EstateContextBuilder.Build(assessment, graph, unitMap);
-        var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context);
         var flows = new FlowBuilder().Build(root, assessment, graph, unitMap);
+        var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context, flows);
         var svg = ArchitectureDiagram.OverviewSvg(input, context);
 
         Directory.CreateDirectory(artifactsDirectory);

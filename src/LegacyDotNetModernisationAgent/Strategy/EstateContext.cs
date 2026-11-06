@@ -31,7 +31,8 @@ public static class EstateContextBuilder
 {
     private static readonly Dictionary<string, string> ExternalNames = new(StringComparer.Ordinal)
     {
-        ["ExternalHttp"] = "External web services",
+        // The analysis sees code that can make web calls (an HTTP client), not which address it calls, so the name must not claim a service.
+        ["ExternalHttp"] = "Web calls (target unknown)",
         ["FileSystem"] = "File shares or local files",
         ["Email"] = "Mail server",
         ["Ftp"] = "FTP server",

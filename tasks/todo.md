@@ -95,3 +95,9 @@ Sources of behaviour, in order of build:
 - [x] Namespaces, member order, SOAP headers, duplicate bindings, RPC parts, header faults and encoding notes, exit code 3 for incomplete runs, remote descriptions may not import local files, schemas beside a svcutil export are read
 - [x] Architecture Word document (`architecture`): diagram as image (Svg.Skia), parts, users, per-part entry points with flows, cross-part journeys, gaps. Open: customer summary linking to key journeys; Word table of contents; per-flow detail appendix
 - [ ] Cross-check WSDL operations against code-detected WCF contracts; WSDL 2.0; OpenAPI for REST; fetch from a running legacy service
+
+### Follow-ups completed
+- [x] Customer summary "Key journeys" from flows; contents list in the architecture document; `wsdl-check` (description against code-detected WCF contracts)
+- [x] "External web services" overclaimed (an HttpClient was only created, no call or address): renamed "Web calls (target unknown)" and reworded the summary sentence
+- [ ] Extract the address an HTTP client calls (URL literals, config keys) so the outside system can be named when it is visible
+- [ ] Review other integration names for the same capability-versus-use overclaim (mail server, message queue, COM)

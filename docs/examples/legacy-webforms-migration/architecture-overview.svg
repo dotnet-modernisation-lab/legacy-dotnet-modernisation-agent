@@ -100,7 +100,7 @@
 <rect x="674" y="240" width="137" height="22" rx="11" fill="#fbe1e1"/>
 <text x="742" y="255" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">6 decisions waiting</text>
 <rect x="1214" y="165" width="204" height="76" rx="12" fill="#ffffff" stroke="#8a96a6" stroke-width="1.6" stroke-dasharray="6 5"/>
-<text x="1228" y="193" font-size="13" font-weight="700" fill="#1f2d3d">External web services</text>
+<text x="1228" y="193" font-size="13" font-weight="700" fill="#1f2d3d">Web calls (target unknown)</text>
 <text x="1228" y="213" font-size="11" font-weight="normal" fill="#6b7a8d">used by LegacyWebFormsSample</text>
 <text x="1228" y="229" font-size="11" font-weight="normal" fill="#6b7a8d">1 place in the code</text>
 <path d="M 864 248 C 1170 248, 1150 203, 1211 203" stroke="#8a96a6" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrow)"/>

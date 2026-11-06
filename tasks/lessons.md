@@ -16,3 +16,7 @@
 ## Validate generated Word files against the schema
 - Found: helper code produced run properties and table borders in the wrong order and tables without a column grid. The files opened in tools that tolerate it, but Word can reject or repair them.
 - Rule: after changing any Word writer, validate every generated .docx with the OpenXML validator (0 issues) as well as comparing word/document.xml across runs.
+
+## Name what the evidence shows, not what it suggests
+- Correction: asked what external web service the sample uses, the honest answer was none. The tool had labelled code that only created an HttpClient as "External web services".
+- Rule: a label for something outside the estate must reflect what was found (code that can make web calls, target unknown), never imply a service exists. Check each new label against a real case before it ships; when asked about a diagram item, read the code instead of trusting the diagram.

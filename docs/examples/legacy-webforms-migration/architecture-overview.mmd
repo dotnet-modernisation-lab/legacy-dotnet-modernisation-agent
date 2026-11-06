@@ -14,7 +14,7 @@ flowchart LR
     a2 -->|uses shared code| a1
     a3 -->|uses shared code| a1
     a3 -->|WCF call| a2
-    e0[("External web services")]:::external
+    e0[("Web calls (target unknown)")]:::external
     a3 -.-> e0
     e1[("File shares or local files")]:::external
     a2 -.-> e1

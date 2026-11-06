@@ -18,7 +18,8 @@ public sealed class SummaryCommand
         var unitMap = DeployableUnits.Build(assessment, graph);
         var context = EstateContextBuilder.Build(assessment, graph, unitMap);
 
-        var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context);
+        var flows = new Flows.FlowBuilder().Build(Path.GetFullPath(repositoryPath), assessment, graph, unitMap);
+        var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context, flows);
 
         Directory.CreateDirectory(artifactsDirectory);
 

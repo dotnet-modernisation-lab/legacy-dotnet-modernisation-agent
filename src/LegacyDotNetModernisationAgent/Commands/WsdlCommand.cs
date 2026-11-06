@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text;
+using LegacyDotNetModernisationAgent.Analysis;
 using LegacyDotNetModernisationAgent.ServiceContracts;
 
 namespace LegacyDotNetModernisationAgent.Commands;
@@ -53,6 +55,50 @@ public sealed class WsdlCommand
 
         // 1: something breaks callers. 3: nothing found, but part of a description could not be read, so "nothing" is not proof.
         return diff.Changes.Any(change => change.Class == ChangeClass.Breaking) ? 1 : diff.NotAnalysed.Count > 0 ? 3 : 0;
+    }
+
+    /// <summary>Checks a published description against the service contracts found in the code. Returns 1 when they disagree.</summary>
+    public async Task<int> CheckAsync(string descriptionLocation, string repositoryPath, string artifactsDirectory, CancellationToken cancellationToken)
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        var description = await new WsdlReader().ReadAsync(descriptionLocation, http, cancellationToken);
+        var assessment = new LegacyDotNetRepositoryAnalyzer().Analyze(Path.GetFullPath(repositoryPath));
+        var check = ContractCrossCheck.Check(description, assessment);
+
+        Directory.CreateDirectory(artifactsDirectory);
+
+        var text = new StringBuilder();
+
+        text.Append("# Service description against the code\n\nDescription: ").Append(check.Description).Append("\n\nRepository: ").Append(check.Repository).Append("\n\n");
+
+        if (check.Findings.Count == 0)
+        {
+            text.Append("The contracts, operations and faults the code declares match what the description publishes.\n");
+        }
+        else
+        {
+            text.Append("| Where | Item | What |\n|---|---|---|\n");
+
+            foreach (var finding in check.Findings)
+            {
+                text.Append("| ").Append(finding.Kind).Append(" | `").Append(finding.Item).Append("` | ").Append(finding.Detail).Append(" |\n");
+            }
+        }
+
+        text.Append("\n## What was not checked\n\n");
+
+        foreach (var note in check.NotAnalysed)
+        {
+            text.Append("- ").Append(note).Append('\n');
+        }
+
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "service-contract-check.json"), Normalise(JsonSerializer.Serialize(check, JsonOptions)), cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "service-contract-check.md"), Normalise(text.ToString()), cancellationToken);
+
+        Console.WriteLine(check.Findings.Count == 0 ? "The description matches the contracts found in the code." : $"{check.Findings.Count} difference(s) between the description and the code");
+        Console.WriteLine($"Wrote service-contract-check.json and service-contract-check.md to {artifactsDirectory}");
+
+        return check.Findings.Count == 0 ? 0 : 1;
     }
 
     private static string Normalise(string text) => text.Replace("\r\n", "\n", StringComparison.Ordinal);

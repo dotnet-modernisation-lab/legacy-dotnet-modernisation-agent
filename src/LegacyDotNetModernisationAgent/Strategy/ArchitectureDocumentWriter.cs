@@ -35,12 +35,36 @@ public static class ArchitectureDocumentWriter
         document.PackageProperties.Modified = FixedDate;
         document.PackageProperties.LastModifiedBy = "legacy-dotnet-modernisation-agent";
 
+        var entries = new List<(string Title, int Level, string Name)>();
+
+        Paragraph Mark(Paragraph paragraph, string heading, int level)
+        {
+            var id = entries.Count + 1;
+            var name = $"section{id}";
+
+            paragraph.InsertAt(new BookmarkStart { Id = id.ToString(), Name = name }, 1);
+            paragraph.Append(new BookmarkEnd { Id = id.ToString() });
+
+            if (level > 1 && paragraph.ParagraphProperties is { } properties)
+            {
+                properties.Append(new OutlineLevel { Val = level - 1 });
+            }
+
+            entries.Add((heading, level, name));
+
+            return paragraph;
+        }
+
         body.Append(CustomerSummaryWriter.Para(title, size: 44, bold: true, colour: Navy, after: 40));
         body.Append(CustomerSummaryWriter.Para("How the estate is put together, read from the code", size: 22, colour: Muted, after: 200));
         body.Append(CustomerSummaryWriter.Callout("This document shows the deployable parts of the estate, who uses them as far as the code shows, what they connect to outside the estate, and what each entry point does. Everything in it is read from the code and configuration. Nothing was run, and where the tool could not follow or could not see, it says so."));
 
+        var contentsPlaceholder = new Paragraph();
+
+        body.Append(contentsPlaceholder);
+
         // ---- Overview ---------------------------------------------------------------------------------
-        body.Append(CustomerSummaryWriter.Heading("Overview"));
+        body.Append(Mark(CustomerSummaryWriter.Heading("Overview"), "Overview", 1));
 
         if (diagram is { } picture)
         {
@@ -49,7 +73,7 @@ public static class ArchitectureDocumentWriter
 
         body.Append(CustomerSummaryWriter.Para("Cards are the deployable parts. The bar and badge show relative size, and the chips show confidence and open decisions. People and callers are deduced from what each project is, and who they are is not visible in a repository. The dashed boundary is the estate found in the repository. Arrows point from a part to the part it depends on.", size: 19, colour: Muted, after: 120, before: 80));
 
-        body.Append(CustomerSummaryWriter.Heading("The parts"));
+        body.Append(Mark(CustomerSummaryWriter.Heading("The parts"), "The parts", 1));
         body.Append(CustomerSummaryWriter.Table(
             ["Part", "What it is", "What it contains", "Size", "Confidence"],
             [18, 24, 34, 12, 12],
@@ -68,7 +92,7 @@ public static class ArchitectureDocumentWriter
         }
 
         // ---- People and outside systems -----------------------------------------------------------------
-        body.Append(CustomerSummaryWriter.Heading("Who uses it, and what it reaches"));
+        body.Append(Mark(CustomerSummaryWriter.Heading("Who uses it, and what it reaches"), "Who uses it, and what it reaches", 1));
 
         foreach (var actor in context.Actors)
         {
@@ -92,12 +116,12 @@ public static class ArchitectureDocumentWriter
 
             foreach (var system in context.ExternalSystems)
             {
-                body.Append(CustomerSummaryWriter.Bullet($"{system.Name} ({system.Category}), used by {string.Join(", ", system.UsedBy.Select(CustomerSummary_DisplayName))}"));
+                body.Append(CustomerSummaryWriter.Bullet($"{system.Name}, used by {string.Join(", ", system.UsedBy.Select(CustomerSummary_DisplayName))}"));
             }
         }
 
         // ---- Entry points per part ----------------------------------------------------------------------------
-        body.Append(CustomerSummaryWriter.Heading("What each part does"));
+        body.Append(Mark(CustomerSummaryWriter.Heading("What each part does"), "What each part does", 1));
         body.Append(CustomerSummaryWriter.Para("Each row is an entry point: something outside the code starts it. The path is followed by name through the code, only where one target is plausible.", size: 19, colour: Muted, after: 80));
 
         if (flows.Flows.Count == 0)
@@ -107,7 +131,7 @@ public static class ArchitectureDocumentWriter
 
         foreach (var unit in flows.Flows.GroupBy(flow => flow.Unit).OrderBy(group => group.Key, StringComparer.Ordinal))
         {
-            body.Append(CustomerSummaryWriter.Para(CustomerSummary_DisplayName(unit.Key), size: 24, bold: true, colour: Navy, after: 60, before: 160));
+            body.Append(Mark(CustomerSummaryWriter.Para(CustomerSummary_DisplayName(unit.Key), size: 24, bold: true, colour: Navy, after: 60, before: 160), CustomerSummary_DisplayName(unit.Key), 2));
 
             body.Append(CustomerSummaryWriter.Table(
                 ["Entry point", "Starts as", "Reads from the request", "Ends at", "Not followed"],
@@ -132,7 +156,7 @@ public static class ArchitectureDocumentWriter
 
         if (crossing.Count > 0)
         {
-            body.Append(CustomerSummaryWriter.Heading("Journeys that cross from one part to another"));
+            body.Append(Mark(CustomerSummaryWriter.Heading("Journeys that cross from one part to another"), "Journeys that cross from one part to another", 1));
             body.Append(CustomerSummaryWriter.Para("These are the paths that matter most when parts are migrated separately, because the link between the parts has to keep working.", size: 19, colour: Muted, after: 80));
 
             foreach (var flow in crossing)
@@ -152,7 +176,7 @@ public static class ArchitectureDocumentWriter
         }
 
         // ---- What could not be seen -------------------------------------------------------------------------------
-        body.Append(CustomerSummaryWriter.Heading("What the tool could not follow or see"));
+        body.Append(Mark(CustomerSummaryWriter.Heading("What the tool could not follow or see"), "What the tool could not follow or see", 1));
 
         var gaps = flows.Flows.SelectMany(flow => flow.CouldNotFollow.Select(gap => (flow, gap)))
             .GroupBy(item => (item.gap.Point, item.gap.Reason, item.gap.Location, item.gap.Line))
@@ -180,6 +204,24 @@ public static class ArchitectureDocumentWriter
         }
 
         body.Append(CustomerSummaryWriter.Para("Calls into constructors, properties and lambdas are not indexed. Calls through a variable are followed only into a type the calling code refers to.", size: 17, colour: Muted, after: 0, before: 240, italic: true));
+
+        var contents = new List<Paragraph> { CustomerSummaryWriter.Para("Contents", size: 24, bold: true, colour: Navy, after: 60, before: 120) };
+
+        foreach (var (entry, level, name) in entries)
+        {
+            contents.Add(new Paragraph(
+                new ParagraphProperties(
+                    new SpacingBetweenLines { After = "30" },
+                    new Indentation { Left = (level == 1 ? 0 : 360).ToString() }),
+                new Hyperlink(CustomerSummaryWriter.Run(entry, level == 1 ? 21 : 19, false, level == 1 ? Navy : Muted)) { Anchor = name, History = true }));
+        }
+
+        foreach (var paragraph in contents)
+        {
+            contentsPlaceholder.InsertBeforeSelf(paragraph);
+        }
+
+        contentsPlaceholder.Remove();
 
         body.Append(new SectionProperties(
             new PageSize { Width = 11906u, Height = 16838u },

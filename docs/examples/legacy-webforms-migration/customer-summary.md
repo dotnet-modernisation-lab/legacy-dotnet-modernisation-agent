@@ -29,10 +29,15 @@ _A plain-language view of what you have, what has to be decided, and what we cou
 - The WCF service (LegacyDataServiceHost) uses the shared code.
 - The website (LegacyWebFormsSample) uses the shared code.
 - The website (LegacyWebFormsSample) calls the WCF service (LegacyDataServiceHost).
-- The website (LegacyWebFormsSample) reaches external web services.
+- The website (LegacyWebFormsSample) contains code that can make web calls. The analysis did not find which address it calls, so whether it reaches an outside service is a question for your team.
 - The WCF service (LegacyDataServiceHost) reaches file shares or local files.
 - What the WCF service (LegacyDataServiceHost) declares about access: Field-level read rules are declared in business objects. A custom identity is attached to each request. No authentication is configured here. A shared application secret is used to vouch for calls between applications. Roles named in code: Admin.
 - What the website (LegacyWebFormsSample) declares about access: Field-level read rules are declared in business objects. Sign-in uses Forms authentication (declared in configuration). Code checks whether the user is signed in. A shared application secret is used to vouch for calls between applications. 2 location(s) require sign-in; anything else the configuration allows is open to anyone. Roles named in code: Admin.
+
+## Key journeys
+
+- 2 entry points in the website (LegacyWebFormsSample) lead on into the WCF service (LegacyDataServiceHost). Along the way they touch the data, outside systems, session state, sign-in or access checks and configuration settings.
+- These are the paths that have to keep working while the parts are migrated one at a time.
 
 ## Decisions only your team can make
 
