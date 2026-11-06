@@ -25,16 +25,17 @@ public sealed class DiagramCommand
 
         Directory.CreateDirectory(artifactsDirectory);
 
-        var overviewMermaid = ArchitectureDiagram.OverviewMermaid(input);
+        var context = EstateContextBuilder.Build(assessment, graph, unitMap);
+        var overviewMermaid = ArchitectureDiagram.OverviewMermaid(input, context);
 
-        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "architecture-overview.svg"), ArchitectureDiagram.OverviewSvg(input), cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "architecture-overview.svg"), ArchitectureDiagram.OverviewSvg(input, context), cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "architecture-overview.mmd"), overviewMermaid, cancellationToken);
 
         // One Markdown page with every diagram, which GitHub and most wikis render directly.
         var page = new StringBuilder();
         page.Append("# Architecture: ").Append(input.Repository).Append("\n\n");
         page.Append("Commit ").Append(input.CommitSha).Append(". Drawn from the deterministic analysis; every box and arrow is something the tool found.\n\n");
-        page.Append("## Overview\n\nArrows point from an area to the area it depends on. Colour shows relative size; there is no overall size for the estate.\n\n```mermaid\n").Append(overviewMermaid).Append("```\n");
+        page.Append("## Overview\n\nArrows point from an area to the area it depends on. Colour shows relative size; there is no overall size for the estate. People and callers are deduced from what each project is; who they are and where they connect from is not visible in a repository.\n\n```mermaid\n").Append(overviewMermaid).Append("```\n");
 
         foreach (var area in input.WorkAreas.Where(area => area.Kind != DeployableUnits.NotPlacedKind).OrderBy(area => area.Order))
         {

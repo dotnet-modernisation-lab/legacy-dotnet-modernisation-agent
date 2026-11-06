@@ -6,7 +6,7 @@ namespace LegacyDotNetModernisationAgent.Strategy;
 public sealed record DeployableUnit(string Name, string Kind, IReadOnlyList<string> Projects, IReadOnlyList<string> Notes);
 
 /// <summary>Which unit every graph node belongs to, and the units themselves.</summary>
-public sealed record UnitMap(IReadOnlyList<DeployableUnit> Units, IReadOnlyDictionary<string, string> UnitOfNode);
+public sealed record UnitMap(IReadOnlyList<DeployableUnit> Units, IReadOnlyDictionary<string, string> UnitOfNode, IReadOnlyDictionary<string, string> UnitOfProject);
 
 /// <summary>
 /// Places every graph node in the part of the estate it belongs to, so work areas follow what people recognise
@@ -180,7 +180,7 @@ public static class DeployableUnits
             .OrderBy(unit => unit.Name, StringComparer.Ordinal)
             .ToList();
 
-        return new UnitMap(units, unitOfNode);
+        return new UnitMap(units, unitOfNode, unitOfProject);
     }
 
     /// <summary>
