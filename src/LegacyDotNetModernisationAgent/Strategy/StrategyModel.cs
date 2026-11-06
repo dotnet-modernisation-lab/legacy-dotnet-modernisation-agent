@@ -53,7 +53,7 @@ public sealed class DeterministicStrategyModel : IStrategyModel
 
         foreach (var area in input.WorkAreas.OrderBy(area => area.Order))
         {
-            var members = input.Components.Where(component => component.Layer == area.Name).OrderBy(component => component.NodeId, StringComparer.Ordinal).ToList();
+            var members = input.Components.Where(component => component.Unit == area.Name).OrderBy(component => component.NodeId, StringComparer.Ordinal).ToList();
             var prerequisites = members.SelectMany(component => component.GateIds).Concat(area.BlockedByGates).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
             if (members.Any(component => component.Disposition?.StartsWith("Unassessed", StringComparison.Ordinal) == true) && !prerequisites.Contains("D-UNASSESSED-TECH"))
@@ -65,8 +65,8 @@ public sealed class DeterministicStrategyModel : IStrategyModel
 
             phases.Add(new ProposedPhase(
                 area.Order,
-                $"{area.Name} layer (size {area.Size}, confidence {area.Confidence})",
-                $"{area.ComponentCount} component(s), {area.Points} points ({string.Join(", ", area.Drivers)}). " +
+                $"{area.Name} (size {area.Size}, confidence {area.Confidence})",
+                $"{area.CodeUnitCount} code unit(s) and {area.TechnologyCount} technology reference(s), {area.Points} points ({string.Join(", ", area.Drivers)}). " +
                 (area.DependsOn.Count == 0 ? "Nothing else in the estate depends on it being later, so it can start first. " : $"It uses {string.Join(", ", area.DependsOn)}, which come earlier. ") +
                 (area.Note ?? "") + " It waits on the decision gates that affect its components.",
                 members.Select(component => component.NodeId).ToList(),

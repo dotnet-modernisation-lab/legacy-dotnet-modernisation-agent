@@ -180,11 +180,11 @@ public static class StrategyReportWriter
 
         H1("Work areas: size and order");
         Text("Relative T-shirt sizes and a dependency-aware order, calculated from the deterministic classification (not estimated by a model). A size is an effort indicator, not a number of days. Confidence is Low where the size rests on unassessed technology or undecided gates.");
-        Header("Order", "Area", "Size", "Points", "Confidence", "Components", "Waits on decisions", "Drivers");
+        Header("Order", "Area", "Size", "Points", "Confidence", "Code units", "Technologies", "Waits on decisions", "Drivers");
 
         foreach (var area in input.WorkAreas.OrderBy(area => area.Order))
         {
-            Row(area.Order.ToString(), area.Name, area.Size, area.Points.ToString(), area.Confidence, area.ComponentCount.ToString(), string.Join(", ", area.BlockedByGates), string.Join("; ", area.Drivers));
+            Row(area.Order.ToString(), area.Name, area.Size, area.Points.ToString(), area.Confidence, area.CodeUnitCount.ToString(), area.TechnologyCount.ToString(), string.Join(", ", area.BlockedByGates), string.Join("; ", area.Drivers));
         }
 
         var lowConfidence = input.WorkAreas.Count(area => area.Confidence == "Low");
@@ -240,11 +240,11 @@ public static class StrategyReportWriter
         }
 
         H1("Components needing attention");
-        Header("Component", "Kind", "Layer", "Characteristics", "Gates");
+        Header("Component", "Kind", "Area", "Layer", "Characteristics", "Gates");
 
         foreach (var component in input.Components)
         {
-            Row(component.Name, component.Kind, component.Layer, string.Join(", ", component.Characteristics), string.Join(", ", component.GateIds));
+            Row(component.Name, component.Kind, component.Unit, component.Layer, string.Join(", ", component.Characteristics), string.Join(", ", component.GateIds));
         }
 
         foreach (var omission in input.OmittedComponents)

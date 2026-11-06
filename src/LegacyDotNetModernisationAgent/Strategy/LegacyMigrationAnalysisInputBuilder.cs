@@ -30,6 +30,7 @@ public static class LegacyMigrationAnalysisInputBuilder
         MigrationAnalysis analysis)
     {
         var nodes = graph.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        var unitMap = DeployableUnits.Build(assessment, graph);
 
         var gates = analysis.DecisionGates
             .OrderBy(gate => gate.Id, StringComparer.Ordinal)
@@ -69,6 +70,7 @@ public static class LegacyMigrationAnalysisInputBuilder
                     node?.Name ?? component.NodeId,
                     component.Kind,
                     node?.Layer ?? "Unknown",
+                    unitMap.UnitOfNode.GetValueOrDefault(component.NodeId, DeployableUnits.NotPlacedName),
                     component.Characteristics.Select(characteristic => characteristic.ToString()).Order(StringComparer.Ordinal).ToList(),
                     component.Disposition,
                     component.Rules.Select(rule => rule.RuleId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList(),
@@ -96,7 +98,7 @@ public static class LegacyMigrationAnalysisInputBuilder
             gates,
             components,
             omitted,
-            WorkAreaSizer.Build(graph, analysis, gatesOfNode),
+            WorkAreaSizer.Build(graph, analysis, gatesOfNode, unitMap),
             WorkAreaSizer.Rubric,
             gaps,
             aspects,

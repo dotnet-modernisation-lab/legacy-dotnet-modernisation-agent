@@ -14,6 +14,7 @@ public sealed record InputComponent(
     string Name,
     string Kind,
     string Layer,
+    string Unit,
     IReadOnlyList<string> Characteristics,
     string? Disposition,
     IReadOnlyList<string> RuleIds,
@@ -36,14 +37,18 @@ public sealed record InputAspect(
 public sealed record InputOmission(string Kind, int Count);
 
 /// <summary>
-/// A group of components migrated together (one architectural layer), with a relative size and a dependency-aware order.
+/// A deployable part of the estate (a website, a service, the data source, shared libraries), with a relative size and a dependency-aware order.
 /// Size is a relative effort indicator from a fixed rubric, not an estimate in days. Confidence is Low when part of the area
 /// is unassessed or waits on decisions, because the size then rests on unknowns.
 /// </summary>
 public sealed record InputWorkArea(
     int Order,
     string Name,
+    string Kind,
+    IReadOnlyList<string> Projects,
     int ComponentCount,
+    int CodeUnitCount,
+    int TechnologyCount,
     int Points,
     string Size,
     string Confidence,

@@ -53,7 +53,9 @@ public static class ProjectFileParser
         var projectReferences = items
             .Where(element => element.Name.LocalName == "ProjectReference")
             .Select(element => new ProjectReferenceInfo(
-                (string?)element.Elements().FirstOrDefault(child => child.Name.LocalName == "Name") ?? "",
+                // SDK-style projects have no <Name> element; the project file name is the project name.
+                (string?)element.Elements().FirstOrDefault(child => child.Name.LocalName == "Name")
+                    ?? Path.GetFileNameWithoutExtension(((string)element.Attribute("Include")!).Replace('\\', '/')),
                 ToRepositoryPath(repositoryRoot, projectDirectory, (string)element.Attribute("Include")!)))
             .OrderBy(reference => reference.Path, StringComparer.Ordinal)
             .ToList();
