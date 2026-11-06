@@ -29,12 +29,34 @@ public sealed class WsdlReader
     private readonly List<XElement> bindings = [];
     private readonly List<XElement> services = [];
     private readonly List<XElement> policies = [];
+    private readonly Dictionary<string, int> orderCounts = new(StringComparer.Ordinal);
+    private bool remoteRoot;
+    private bool importedByNamespaceOnly;
 
     public async Task<ServiceContract> ReadAsync(string location, HttpClient? http, CancellationToken cancellationToken)
     {
         var root = ToUri(location);
+
+        remoteRoot = !root.IsFile;
         var queue = new Queue<Uri>([root]);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Pass 1 reads the description and what it names. Tools such as svcutil write schema imports by namespace only and put the
+        // schema files beside the description; pass 2 reads those when the description is a local file.
+        for (var pass = 0; pass < 2; pass++)
+        {
+            if (pass == 1)
+            {
+                if (!importedByNamespaceOnly || !root.IsFile)
+                {
+                    break;
+                }
+
+                foreach (var sibling in Directory.GetFiles(Path.GetDirectoryName(root.LocalPath)!, "*.xsd").Order(StringComparer.Ordinal))
+                {
+                    queue.Enqueue(new Uri(sibling));
+                }
+            }
 
         while (queue.Count > 0)
         {
@@ -70,6 +92,7 @@ public sealed class WsdlReader
 
             Collect(document, uri, queue);
         }
+        }
 
         if (portTypes.Count == 0)
         {
@@ -77,6 +100,11 @@ public sealed class WsdlReader
         }
 
         Build();
+
+        foreach (var duplicate in facts.GroupBy(fact => fact.Key, StringComparer.Ordinal).Where(group => group.Select(fact => fact.Value).Distinct(StringComparer.Ordinal).Count() > 1))
+        {
+            notAnalysed.Add($"{duplicate.Key} is declared more than once with different values; only the first is compared");
+        }
 
         return new ServiceContract(location, facts.OrderBy(fact => fact.Key, StringComparer.Ordinal).ToList(), notAnalysed.ToList());
     }
@@ -125,7 +153,7 @@ public sealed class WsdlReader
 
         foreach (var import in root.Elements(Wsdl + "import").Select(import => import.Attribute("location")?.Value).Where(value => !string.IsNullOrEmpty(value)))
         {
-            queue.Enqueue(new Uri(baseUri, import!));
+            Enqueue(queue, baseUri, import!);
         }
 
         foreach (var message in root.Elements(Wsdl + "message"))
@@ -148,7 +176,11 @@ public sealed class WsdlReader
 
                 if (!string.IsNullOrEmpty(schemaLocation))
                 {
-                    queue.Enqueue(new Uri(baseUri, schemaLocation));
+                    Enqueue(queue, baseUri, schemaLocation);
+                }
+                else if (reference.Name == Xs + "import")
+                {
+                    importedByNamespaceOnly = true;
                 }
             }
 
@@ -172,6 +204,21 @@ public sealed class WsdlReader
         }
     }
 
+    /// <summary>A description fetched from an address may only pull in more files from addresses, never from this machine.</summary>
+    private void Enqueue(Queue<Uri> queue, Uri baseUri, string relative)
+    {
+        var target = new Uri(baseUri, relative);
+
+        if (remoteRoot && !(target.Scheme is "http" or "https"))
+        {
+            notAnalysed.Add($"an import of {target} was refused because the description came from an address and may not read local files");
+
+            return;
+        }
+
+        queue.Enqueue(target);
+    }
+
     // ---- Building facts ---------------------------------------------------------------------
 
     private void Add(string key, string kind, string direction, string value) => facts.Add(new ContractFact(key, kind, direction, value));
@@ -187,6 +234,11 @@ public sealed class WsdlReader
                 var operationKey = $"operation/{portTypeName}.{(string?)operation.Attribute("name")}";
 
                 Add(operationKey, "operation", "none", "exists");
+
+                if (operation.Elements().Any(part => part.Attributes().Any(attribute => attribute.Name.LocalName == "Action")))
+                {
+                    notAnalysed.Add("WS-Addressing actions (wsaw:Action) are declared but not compared");
+                }
 
                 foreach (var part in operation.Elements().Where(child => child.Name == Wsdl + "input" || child.Name == Wsdl + "output"))
                 {
@@ -254,7 +306,15 @@ public sealed class WsdlReader
             }
             else if (typeRef is not null)
             {
-                Add($"{key}/{partName}", "element", direction, $"{TypeDisplay(typeRef.Value)}; min=1; max=1; nillable=false");
+                // RPC style: the part is a name and a type. Flatten it like an element so a changed shape is seen and a renamed type is not.
+                var synthetic = new XElement(Xs + "element", new XAttribute("name", partName), new XAttribute("type", (string?)part.Attribute("type") ?? ""));
+
+                foreach (var declaration in part.AncestorsAndSelf().Reverse().SelectMany(ancestor => ancestor.Attributes().Where(attribute => attribute.IsNamespaceDeclaration)))
+                {
+                    synthetic.SetAttributeValue(declaration.Name, declaration.Value);
+                }
+
+                AddElement(key, direction, synthetic, "1", "1", false, [], 0);
             }
         }
     }
@@ -279,6 +339,11 @@ public sealed class WsdlReader
         var max = (string?)declaration.Attribute("maxOccurs") ?? inheritedMax;
         var nillable = ((string?)source.Attribute("nillable") ?? "false").ToLowerInvariant();
         var elementPath = $"{path}/{name}";
+        var schema = source.Ancestors(Xs + "schema").FirstOrDefault();
+        var targetNs = (string?)schema?.Attribute("targetNamespace") ?? "";
+        var qualified = source.Parent?.Name == Xs + "schema"
+                        || ((string?)source.Attribute("form") ?? (string?)schema?.Attribute("elementFormDefault")) == "qualified";
+        var wireNs = qualified ? targetNs : "";
         var typeRef = Qualified(source, (string?)source.Attribute("type"));
         var inlineComplex = source.Element(Xs + "complexType");
         var inlineSimple = source.Element(Xs + "simpleType");
@@ -322,7 +387,7 @@ public sealed class WsdlReader
             display = "xs:anyType";
         }
 
-        Add(elementPath, "element", direction, $"{display}; min={min}; max={max}; nillable={nillable}");
+        Add(elementPath, "element", direction, $"{display}; min={min}; max={max}; nillable={nillable}; ns={wireNs}");
 
         if (simple is not null)
         {
@@ -392,6 +457,19 @@ public sealed class WsdlReader
 
     private void AddParticles(string path, string direction, XElement container, bool isChoice, HashSet<string> stack, int depth)
     {
+        if (container.Name == Xs + "sequence")
+        {
+            var names = container.Elements(Xs + "element").Select(item => (string?)item.Attribute("name") ?? Local((string?)item.Attribute("ref")) ?? "").ToList();
+
+            if (names.Count > 1)
+            {
+                var seen = orderCounts.GetValueOrDefault(path);
+
+                orderCounts[path] = seen + 1;
+                Add($"{path}/#order{(seen == 0 ? "" : (seen + 1).ToString())}", "order", direction, string.Join("|", names));
+            }
+        }
+
         foreach (var child in container.Elements())
         {
             if (child.Name == Xs + "element")
@@ -451,7 +529,9 @@ public sealed class WsdlReader
         var transport = (string?)soap.Attribute("transport") ?? "";
         var transportName = transport.Split('/', '#').LastOrDefault(part => part.Length > 0) ?? "(none)";
         var style = (string?)soap.Attribute("style") ?? "document";
-        var key = $"binding/{portTypeName}/soap{version}-{transportName}";
+        var baseKey = $"binding/{portTypeName}/soap{version}-{transportName}";
+        var sharing = bindings.Count(other => BindingBaseKey(other) == baseKey);
+        var key = sharing > 1 ? $"{baseKey}[{(string?)binding.Attribute("name")}]" : baseKey;
 
         Add(key, "binding", "none", $"SOAP {version} over {transportName}");
 
@@ -471,7 +551,62 @@ public sealed class WsdlReader
             Add($"{key}/operation/{name}/soapAction", "soapAction", "none", (string?)soapOperation?.Attribute("soapAction") ?? "");
             Add($"{key}/operation/{name}/style", "style", "none", (string?)soapOperation?.Attribute("style") ?? style);
             Add($"{key}/operation/{name}/use", "use", "none", (string?)body?.Attribute("use") ?? "literal");
+
+            if ((string?)body?.Attribute("use") == "encoded")
+            {
+                notAnalysed.Add($"operation {name} uses SOAP encoding; its messages are compared by name only");
+            }
+
+            if (body?.Attribute("namespace") is { } bodyNamespace)
+            {
+                Add($"{key}/operation/{name}/bodyNamespace", "bodyNamespace", "none", bodyNamespace.Value);
+            }
+
+            var operationKey = $"operation/{portTypeName}.{name}";
+
+            foreach (var (side, direction) in new[] { ("input", "in"), ("output", "out") })
+            {
+                foreach (var header in operation.Element(Wsdl + side)?.Elements().Where(child => child.Name.LocalName == "header") ?? [])
+                {
+                    AddHeader(operationKey, direction, header);
+                }
+
+                if (operation.Element(Wsdl + side)?.Elements().Any(child => child.Name.LocalName == "headerfault") == true)
+                {
+                    notAnalysed.Add($"operation {name} declares SOAP header faults, which are not compared");
+                }
+            }
         }
+    }
+
+    private string BindingBaseKey(XElement binding)
+    {
+        var soap = binding.Elements().FirstOrDefault(child => child.Name == Soap11 + "binding" || child.Name == Soap12 + "binding");
+        var transport = ((string?)soap?.Attribute("transport") ?? "").Split('/', '#').LastOrDefault(part => part.Length > 0) ?? "(none)";
+
+        return $"binding/{Local((string?)binding.Attribute("type")) ?? "(unknown)"}/soap{(soap?.Name.Namespace == Soap12 ? "1.2" : "1.1")}-{transport}";
+    }
+
+    /// <summary>A SOAP header is part of the message: custom headers often carry credentials or context that callers must send or read.</summary>
+    private void AddHeader(string operationKey, string direction, XElement header)
+    {
+        var message = Qualified(header, (string?)header.Attribute("message"));
+        var partName = (string?)header.Attribute("part");
+
+        if (message is not null && messages.TryGetValue(message.Value, out var definition))
+        {
+            var part = definition.Elements(Wsdl + "part").FirstOrDefault(candidate => (string?)candidate.Attribute("name") == partName);
+            var elementRef = part is null ? null : Qualified(part, (string?)part.Attribute("element"));
+
+            if (elementRef is not null && elements.TryGetValue(elementRef.Value, out var declaration))
+            {
+                AddElement($"{operationKey}/{direction}-header", direction, declaration, "1", "1", false, [], 0);
+
+                return;
+            }
+        }
+
+        notAnalysed.Add($"a SOAP header of {operationKey} ({partName ?? "unnamed"}) could not be resolved to an element, so it is not compared");
     }
 
     private SortedSet<string> PolicyNames(XElement binding)

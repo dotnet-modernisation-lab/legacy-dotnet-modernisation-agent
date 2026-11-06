@@ -55,8 +55,12 @@ dotnet run --project src/LegacyDotNetModernisationAgent -- wsdl-compare <old> <n
 comparable facts: operations, message shapes (element names, types, how often each may appear, nil, allowed values),
 faults, SOAP action and encoding, declared security policy names and endpoints. `wsdl-compare` compares two and
 classifies each difference from the point of view of a caller built against the old contract: Breaking, Review,
-Compatible or Informational. It returns exit code 1 when anything is Breaking, so it can gate a migration. Anything it
-could not read (a missing import, WSDL 2.0, `xs:any`, groups) is listed, and the comparison says it is incomplete.
+Compatible or Informational. It returns exit code 1 when anything is Breaking, and 3 when nothing is but part of a description could not be read, so
+"no differences" is never reported as clean when it is not. Anything it could not read (a missing import, WSDL 2.0,
+`xs:any`, groups, SOAP encoding, header faults, WS-Addressing actions) is listed. It compares element namespaces, the order
+of members in a sequence, SOAP headers and each binding. A description fetched from an address may only import further
+addresses. To get the old description, save `...svc?singleWsdl` or `...asmx?WSDL` from the running legacy service, or run
+`SvcUtil /t:metadata <service dll>` on the built assembly.
 The rules are fixed and conservative; behaviour behind the service is not compared. Fetching an address is the only network
 call. Planted example: `docs/fixtures/wsdl`.
 

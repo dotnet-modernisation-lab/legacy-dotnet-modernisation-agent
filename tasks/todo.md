@@ -90,3 +90,8 @@ Sources of behaviour, in order of build:
 - [x] H2. Service-description (WSDL 1.1) read and compare (`wsdl`, `wsdl-compare`), planted fixture docs/fixtures/wsdl; ASMX WebMethod entry points in flows. Open: WSDL 2.0, REST/OpenAPI descriptions, cross-check WSDL against code-detected WCF contracts, fetching from a running legacy service (needs a reachable endpoint), WS-Policy settings, message-level SOAP capture
 - [ ] H3. Scenario file interpreter
 - [ ] Comparison against migrated code (later); timers and thread-started work as entry points; method parameters as inputs; overload-level precision
+
+### H2 follow-ups (after review)
+- [x] Namespaces, member order, SOAP headers, duplicate bindings, RPC parts, header faults and encoding notes, exit code 3 for incomplete runs, remote descriptions may not import local files, schemas beside a svcutil export are read
+- [ ] Architecture Word document that includes the diagram and the flows per part (needs SVG to PNG, or native shapes); the customer summary can then link to key journeys
+- [ ] Cross-check WSDL operations against code-detected WCF contracts; WSDL 2.0; OpenAPI for REST; fetch from a running legacy service

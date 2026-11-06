@@ -76,6 +76,8 @@ public static class ContractComparer
                 "element" or "attribute" when direction == "in" => RequiredIn(fact.Value)
                     ? Make(ChangeClass.Breaking, "a new required input; existing callers do not send it")
                     : Make(ChangeClass.Compatible, "a new optional input"),
+                "order" => Make(ChangeClass.Informational, "a new ordered list of members"),
+                "bodyNamespace" => Make(ChangeClass.Review, "the body namespace is now declared"),
                 "element" or "attribute" => Make(ChangeClass.Compatible, "a new item in what callers receive; callers that validate strictly against the old shape may reject it"),
                 "endpoint" or "endpointContract" => Make(ChangeClass.Informational, "a new endpoint"),
                 "policy" => Make(ChangeClass.Review, "a security or messaging policy is now declared"),
@@ -94,7 +96,8 @@ public static class ContractComparer
                 "element" or "attribute" => direction == "in"
                     ? Make(ChangeClass.Breaking, "an input that existing callers send is no longer in the contract; the new service may reject or ignore it")
                     : Make(ChangeClass.Breaking, "an item that existing callers read is no longer returned"),
-                "soapAction" or "style" or "use" => Make(ChangeClass.Breaking, "the message framing that existing callers use is gone"),
+                "soapAction" or "style" or "use" or "bodyNamespace" => Make(ChangeClass.Breaking, "the message framing that existing callers use is gone"),
+                "order" => Make(ChangeClass.Informational, "the ordered list of members is no longer declared"),
                 "endpoint" => Make(ChangeClass.Review, "an endpoint is gone"),
                 "endpointContract" => Make(ChangeClass.Review, "an endpoint no longer names its contract"),
                 "policy" => Make(ChangeClass.Review, "a declared security or messaging policy is gone"),
@@ -108,6 +111,8 @@ public static class ContractComparer
         {
             "operation" or "binding" => Make(ChangeClass.Informational, "changed"),
             "soapAction" => Make(ChangeClass.Breaking, "the SOAP action existing callers send no longer matches"),
+            "bodyNamespace" => Make(ChangeClass.Breaking, "the body namespace differs from what existing callers send"),
+            "order" => ClassifyOrder(was.Value, now.Value, Make),
             "style" or "use" => Make(ChangeClass.Breaking, "the message encoding differs from what existing callers produce and expect"),
             "endpoint" => Make(ChangeClass.Informational, "the service address differs; that is a deployment detail, not a contract change"),
             "endpointContract" => Make(ChangeClass.Review, "the endpoint now serves a different contract"),
@@ -120,6 +125,28 @@ public static class ContractComparer
 
     private static bool RequiredIn(string value) =>
         !value.Contains("min=0", StringComparison.Ordinal) && !value.Contains("use=optional", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Order matters on the wire for sequences, and the serializer WCF uses for data contracts is order-sensitive, so members arriving
+    /// in a different order can be dropped or defaulted without any error. Members present on only one side are reported separately.
+    /// </summary>
+    private static ContractChange ClassifyOrder(string old, string current, Func<ChangeClass, string, ContractChange> make)
+    {
+        var was = old.Split('|').ToList();
+        var now = current.Split('|').ToList();
+        var common = was.Intersect(now, StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+
+        if (!was.Where(common.Contains).SequenceEqual(now.Where(common.Contains), StringComparer.Ordinal))
+        {
+            return make(ChangeClass.Breaking, "the members are in a different order; order-sensitive serializers may drop or default them");
+        }
+
+        var insertedBeforeExisting = now.Select((name, index) => (name, index)).Any(item => !was.Contains(item.name, StringComparer.Ordinal) && now.Skip(item.index + 1).Any(common.Contains));
+
+        return insertedBeforeExisting
+            ? make(ChangeClass.Review, "a member was added before existing ones; order-sensitive serializers may misread messages from existing callers")
+            : make(ChangeClass.Informational, "members were added at the end or removed; the order of the rest is unchanged");
+    }
 
     private static ContractChange ClassifyEnum(string direction, string old, string current, Func<ChangeClass, string, ContractChange> make)
     {
@@ -154,6 +181,11 @@ public static class ContractComparer
         }
 
         var inbound = direction == "in";
+
+        if (was.GetValueOrDefault("ns") != now.GetValueOrDefault("ns"))
+        {
+            results.Add((ChangeClass.Breaking, $"the XML namespace of the element changed from \"{was.GetValueOrDefault("ns")}\" to \"{now.GetValueOrDefault("ns")}\"; callers and the service no longer agree on its name"));
+        }
 
         if (was.GetValueOrDefault("min") != now.GetValueOrDefault("min"))
         {

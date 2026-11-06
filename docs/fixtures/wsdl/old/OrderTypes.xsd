@@ -15,5 +15,10 @@
   <xs:element name="GetOrderResponse"><xs:complexType><xs:sequence><xs:element name="GetOrderResult" type="tns:OrderDto"/></xs:sequence></xs:complexType></xs:element>
   <xs:element name="Cancel"><xs:complexType><xs:sequence><xs:element name="orderId" type="xs:int"/></xs:sequence></xs:complexType></xs:element>
   <xs:element name="CancelResponse"><xs:complexType><xs:sequence><xs:element name="ok" type="xs:boolean"/></xs:sequence></xs:complexType></xs:element>
+  <xs:element name="Lookup"><xs:complexType><xs:sequence><xs:element name="sku" type="xs:string"/></xs:sequence></xs:complexType></xs:element>
+  <xs:element name="LookupResponse"><xs:complexType><xs:sequence>
+    <xs:element name="sku" type="xs:string"/><xs:element name="price" type="xs:decimal"/><xs:element name="stock" type="xs:int"/>
+  </xs:sequence></xs:complexType></xs:element>
+  <xs:element name="AuthToken"><xs:complexType><xs:sequence><xs:element name="token" type="xs:string"/></xs:sequence></xs:complexType></xs:element>
   <xs:element name="OrderNotFound"><xs:complexType><xs:sequence><xs:element name="reason" type="xs:string"/></xs:sequence></xs:complexType></xs:element>
 </xs:schema>

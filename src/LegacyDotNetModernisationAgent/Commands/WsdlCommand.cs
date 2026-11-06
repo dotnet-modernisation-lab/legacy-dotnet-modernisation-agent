@@ -6,7 +6,7 @@ namespace LegacyDotNetModernisationAgent.Commands;
 
 /// <summary>
 /// Reads a service description (WSDL 1.1, file or address), or compares two. Nothing is called except to fetch the description
-/// and the files it imports. Comparing returns 1 when anything is Breaking, so it can gate a migration.
+/// and the files it imports. Comparing returns 1 when anything is Breaking and 3 when nothing is but part of a description could not be read, so it can gate a migration.
 /// </summary>
 public sealed class WsdlCommand
 {
@@ -51,7 +51,8 @@ public sealed class WsdlCommand
 
         Console.WriteLine($"Wrote service-contract-diff.json and service-contract-diff.md to {artifactsDirectory}");
 
-        return diff.Changes.Any(change => change.Class == ChangeClass.Breaking) ? 1 : 0;
+        // 1: something breaks callers. 3: nothing found, but part of a description could not be read, so "nothing" is not proof.
+        return diff.Changes.Any(change => change.Class == ChangeClass.Breaking) ? 1 : diff.NotAnalysed.Count > 0 ? 3 : 0;
     }
 
     private static string Normalise(string text) => text.Replace("\r\n", "\n", StringComparison.Ordinal);

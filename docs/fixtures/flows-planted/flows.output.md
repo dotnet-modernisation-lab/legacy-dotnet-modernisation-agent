@@ -2,7 +2,7 @@
 
 ### LegacyQuotes.QuoteFor
 
-- **Starts as:** Service operation (WebMethod on a WebService class (SOAP over ASMX))
+- **Starts as:** Service operation (WebMethod attribute (SOAP over ASMX))
 - **Methods reached, in call order (indented by call depth):**
   1. `LegacyQuotes.QuoteFor` (entry point; src/Shop.Logic/Logic.cs:65)
     2. `PriceBook.Lookup` (by name; src/Shop.Logic/Logic.cs:60)
