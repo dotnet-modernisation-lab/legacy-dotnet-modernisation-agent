@@ -72,3 +72,13 @@ Principle: the tool will be run against legacy code bases we have not seen. **An
 - Stored-procedure contract is linked to the DAL by naming convention only; no code enforces it
 - Two copies of `Customers.json`
 - [x] G4. Sales offering one-pager (docs/sales-offering.md): step ladder with Available/Partial/Roadmap labels. Word version via `offering <md> [docx]` (SalesOfferingWriter). Open: Step 0 questionnaire
+
+## H. Generic behaviour probe (replaces the sample-specific probe)
+Sources of behaviour, in order of build:
+- [ ] H1. Static contracts per element from the analysis: per page (declared access), per WCF service (operations), every stored procedure, session keys, declared access (already generic)
+- [ ] H2. Generic anonymous crawl: host every web project and WCF host found; GET only each discovered page and service description; record status, redirect, title, form fields, table ids and row counts, WSDL operations; run twice and mark keys that differ between runs as unstable; strip ASP.NET hidden fields
+- [ ] H3. Scenario file interpreter (get, postback, extractText, extractRows, stopHost); sample's checks move to docs/examples/legacy-webforms-migration/behaviour-scenarios.json; no file means the output says so
+- [ ] H4. Replace throws in target resolution with coverage notes; match each WCF host to its port via the client with the same contract; readiness probe on a discovered service; ProbeName http-iisexpress/2
+- [ ] H5. README wording; sweep of src/ for the sample's names returns zero
+- Proof: sample with the scenario file reproduces every old observation value; planted fixture with different names and no web app or host reports what it could not exercise; repeat runs identical except unstable keys
+- Roadmap: record and replay a real session (HAR/Fiddler), IIS log usage ranking, existing UI or test suites, stored-procedure characterisation against a test database
