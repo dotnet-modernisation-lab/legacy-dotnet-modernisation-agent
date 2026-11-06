@@ -107,3 +107,13 @@ Sources of behaviour, in order of build:
 - [ ] Access matrix: roles and sign-in state against journeys (Given/When/Then already carries them per flow); needs role names read from code (IsInRole literals) as facts
 - [ ] Component-level diagram per part; namespace-based grouping if namespaces are added to the graph
 - [ ] Customer-facing wording for the new sections
+
+### C4 model output
+- [ ] Emit the current-state architecture as a C4 model, in Structurizr DSL (the tool-neutral text form, one file) and Mermaid C4 for GitHub:
+  - Level 1 System context: the estate as the system, people from the deduced users (marked "who is not known"), outside systems from the integrations (marked "target not identified" where only an HTTP client was found)
+  - Level 2 Containers: each deployable part (website, WCF service, Windows service, desktop app, data source) with its technology taken from facts, and the links already labelled (WCF call, reads and writes data)
+  - Level 3 Components: the component map per part (folders, layer, dependencies), capped to the most connected components per part
+  - Dynamic views: the key journeys that cross from one part to another, from the flows
+  - Level 4 (code) is out of scope: the code is the source
+  - Rules: every element and relationship cites the fact it came from; nothing is invented to make the picture complete; unknowns are shown as unknowns; output is deterministic; text only, no overall size
+  - Open: a views file the user can load into Structurizr without edits; consistent element IDs so a later model of the target architecture can be diffed against it
