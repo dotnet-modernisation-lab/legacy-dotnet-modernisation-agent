@@ -191,7 +191,7 @@ public static class CustomerSummaryWriter
         _ => "FBD5D5"
     };
 
-    private static Paragraph Heading(string text) =>
+    internal static Paragraph Heading(string text) =>
         new(
             new ParagraphProperties(
                 new KeepNext(),
@@ -199,9 +199,9 @@ public static class CustomerSummaryWriter
                 new SpacingBetweenLines { Before = "280", After = "100" }),
             Run(text, 28, true, Navy));
 
-    private static Paragraph Bullet(string text) => Para("•  " + text, size: 21, after: 60, indent: 300, hanging: 300);
+    internal static Paragraph Bullet(string text) => Para("•  " + text, size: 21, after: 60, indent: 300, hanging: 300);
 
-    private static Paragraph Para(string text, int size = 21, bool bold = false, string colour = Ink, int after = 80, int before = 0, int indent = 0, int hanging = 0, bool italic = false)
+    internal static Paragraph Para(string text, int size = 21, bool bold = false, string colour = Ink, int after = 80, int before = 0, int indent = 0, int hanging = 0, bool italic = false)
     {
         var properties = new ParagraphProperties(new SpacingBetweenLines { Before = before.ToString(), After = after.ToString(), Line = "264", LineRule = LineSpacingRuleValues.Auto });
 
@@ -213,7 +213,7 @@ public static class CustomerSummaryWriter
         return new Paragraph(properties, Run(text, size, bold, colour, italic));
     }
 
-    private static Paragraph Callout(string text) =>
+    internal static Paragraph Callout(string text) =>
         new(
             new ParagraphProperties(
                 new ParagraphBorders(
@@ -253,7 +253,7 @@ public static class CustomerSummaryWriter
         return run;
     }
 
-    private static Table Table(string[] headers, int[] widths, List<string[]> rows, int shadeColumn = -1, Func<int, string>? shade = null)
+    internal static Table Table(string[] headers, int[] widths, List<string[]> rows, int shadeColumn = -1, Func<int, string>? shade = null)
     {
         var table = new Table(new TableProperties(
             new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct },

@@ -71,4 +71,4 @@ Principle: the tool will be run against legacy code bases we have not seen. **An
 - Unknown customer and stopped WCF service show the same message ("DataPortal.Fetch failed")
 - Stored-procedure contract is linked to the DAL by naming convention only; no code enforces it
 - Two copies of `Customers.json`
-- [x] G4. Sales offering one-pager (docs/sales-offering.md): step ladder with Available/Partial/Roadmap labels. Open: Word version, Step 0 questionnaire
+- [x] G4. Sales offering one-pager (docs/sales-offering.md): step ladder with Available/Partial/Roadmap labels. Word version via `offering <md> [docx]` (SalesOfferingWriter). Open: Step 0 questionnaire

@@ -8,6 +8,7 @@ const string Usage = """
       strategy <repositoryPath> [artifactsDirectory] [--model=deterministic|foundry|file:<strategy.json>]
                                                               evidence bundle, strategy, validation, Markdown and Word report
       diagram <repositoryPath> [artifactsDirectory]           architecture overview (SVG, Mermaid) and a detail view per area
+      offering <markdownPath> [output.docx]                  Word version of the sales offering Markdown
       summary <repositoryPath> [artifactsDirectory]           customer summary (Word, Markdown) in plain language, with the overview diagram
     """;
 
@@ -23,7 +24,7 @@ var verify = args.Contains("--verify", StringComparer.OrdinalIgnoreCase);
 var positional = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
 var command = positional.FirstOrDefault()?.Trim().ToLowerInvariant();
 
-if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy" or "diagram" or "summary"))
+if (positional.Length < 2 || command is not ("assess" or "behave" or "strategy" or "diagram" or "summary" or "offering"))
 {
     Console.Error.WriteLine(Usage);
 
@@ -37,6 +38,15 @@ try
     if (command == "assess")
     {
         await new AssessCommand().ExecuteAsync(positional[1], artifacts, cancellationTokenSource.Token);
+
+        return 0;
+    }
+
+    if (command == "offering")
+    {
+        var output = positional.Length > 2 ? positional[2] : Path.ChangeExtension(positional[1], ".docx");
+        LegacyDotNetModernisationAgent.Strategy.SalesOfferingWriter.Word(positional[1], output);
+        Console.WriteLine($"Wrote {output}");
 
         return 0;
     }
