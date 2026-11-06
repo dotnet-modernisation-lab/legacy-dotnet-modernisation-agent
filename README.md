@@ -27,6 +27,7 @@ dotnet run --project src/LegacyDotNetModernisationAgent -- assess <repositoryPat
 Writes, deterministically (byte-identical across runs):
 
 - `Artifacts/legacy-project-assessment.json`: facts (projects, findings, binary evidence, WCF, data access, type structure)
+- `summary <repositoryPath> [artifactsDirectory]` writes the customer summary (`customer-summary.docx` and `.md`) in plain language: the parts of the estate with size and confidence, how they fit together and who uses them, the decisions only the customer's team can make (each as a question), the main risks, what the analysis could not see (as questions), and suggested next steps, plus `architecture-overview.svg`. No model is used; wording lives in `Strategy/ClientLanguage.cs` so it can be reviewed. It has no identifiers, prices, dates or overall size.
 - `diagram <repositoryPath> [artifactsDirectory]` draws the architecture from the deterministic facts (no model): `architecture-overview.svg` and `.mmd` show the deployable areas, their size, waiting decisions and what depends on what; `architecture.md` has the overview plus a detail view per area (Mermaid, renders on GitHub); one `architecture-detail-*.mmd` per area. Output is identical on every run.
 - `Artifacts/legacy-dependency-graph.json`: nodes, typed edges with basis and evidence, layer boundaries, impact sets, page-to-stored-procedure paths
 - `Artifacts/migration-analysis.json`: migration characteristics per component (rule ID, reason, evidence), human decision gates, potentially portable areas

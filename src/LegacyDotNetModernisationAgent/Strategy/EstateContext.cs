@@ -103,27 +103,27 @@ public static class EstateContextBuilder
             {
                 case "Website":
                     actors.Add(new UnitActor(unit.Name, "Browser users", "The project serves web pages.", facts, tags,
-                        ["Whether the users are staff, customers or the public, and whether they connect from the internet or an internal network."]));
+                        ["Are the users staff, customers or the public, and do they connect from the internet or an internal network?"]));
                     break;
                 case "WCF service":
                     {
                         var known = callers.GetValueOrDefault(unit.Name, []);
 
                         actors.Add(new UnitActor(unit.Name, known.Count > 0 ? "Calling applications" : "Callers not visible", known.Count > 0 ? $"Called by {string.Join(", ", known)}." : "The service is exposed, but no caller was found in the repository.", facts, tags,
-                            ["Whether other applications or partners call the service, and from which networks."]));
+                            ["Do other applications or partners call the service, and from which networks?"]));
                         break;
                     }
                 case "Desktop application":
                     actors.Add(new UnitActor(unit.Name, "Desktop users", "The project is a Windows desktop application.", facts, tags,
-                        ["How many users there are and how the application is installed on their machines."]));
+                        ["How many users are there, and how is the application installed on their machines?"]));
                     break;
                 case "Windows service":
                     actors.Add(new UnitActor(unit.Name, "Started by Windows", "The project is a Windows service, so it runs unattended.", facts, tags,
-                        ["What starts or schedules its work, and who is responsible for it running."]));
+                        ["What starts or schedules its work, and who is responsible for it running?"]));
                     break;
                 case "Application":
                     actors.Add(new UnitActor(unit.Name, "Operators or scheduled tasks", "The project is an executable with no web or service host.", facts, tags,
-                        ["Who or what runs it, and how often."]));
+                        ["Who or what runs it, and how often?"]));
                     break;
             }
         }
@@ -177,7 +177,7 @@ public static class EstateContextBuilder
             {
                 "FormsAuthentication" => ("Sign-in uses Forms authentication (declared in configuration).", "Forms sign-in"),
                 "NoAuthenticationConfigured" => ("No authentication is configured here.", "No authentication configured"),
-                "SharedSecretOrTrustedSubsystem" => ("Callers are trusted through a shared application secret.", "Shared-secret trust"),
+                "SharedSecretOrTrustedSubsystem" => ("A shared application secret is used to vouch for calls between applications.", "Shared-secret trust"),
                 "CslaAuthorizationRules" => ("Field-level read rules are declared in business objects.", "Field-level rules"),
                 "IdentityChecksInCode" => ("Code checks whether the user is signed in.", "Sign-in checked in code"),
                 "CustomPrincipal" => ("A custom identity is attached to each request.", "Custom identity"),
