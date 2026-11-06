@@ -1,0 +1,42 @@
+flowchart TD
+    subgraph L_BusinessObjects["BusinessObjects"]
+        n1["<b>CustomerData</b><br/>CslaBusinessObject<br/>decisions: D-AUTH-TARGET, D-CSLA-TARGET, D-DATAPORTAL-TARGET"]:::gated
+    end
+    subgraph L_DataAccess["DataAccess"]
+        n6["<b>LegacyCustomerDal</b><br/>Dal"]
+    end
+    subgraph L_Hosting["Hosting"]
+        n8["<b>Global.asax</b><br/>GlobalAsax"]
+    end
+    subgraph L_ServiceBoundary["ServiceBoundary"]
+        n5["<b>ILegacyCustomerService</b><br/>WcfContract<br/>decisions: D-WCF-TARGET"]:::gated
+        n7["<b>LegacyCustomerService</b><br/>WcfService<br/>decisions: D-AUTH-TARGET, D-WCF-TARGET"]:::gated
+        n9["<b>LegacyCustomerService.svc</b><br/>WcfHost<br/>decisions: D-WCF-TARGET"]:::gated
+    end
+    subgraph L_Unclassified["Unclassified"]
+        n0["<b>CustomerCriteria</b><br/>Class"]
+        n2["<b>CustomerNotFoundFault</b><br/>DataContract"]
+        n3["<b>CustomerRecord</b><br/>DataContract"]
+        n4["<b>CustomerRequest</b><br/>DataContract"]
+    end
+    n1 --> n0
+    n1 --> n6
+    n5 --> n2
+    n5 --> n3
+    n5 --> n4
+    n6 --> n3
+    n7 --> n1
+    n7 --> n2
+    n7 --> n3
+    n7 --> n4
+    n7 --> n5
+    n9 --> n7
+    x0(["Data source"]):::other
+    n6 -.-> x0
+    x1(["Shared libraries and technologies"]):::other
+    n1 -.-> x1
+    n7 -.-> x1
+    tech["<b>Technologies used</b><br/>1 AuthenticationMechanism<br/>1 ConfigurationSetting<br/>1 Integration"]:::tech
+    classDef gated fill:#fbd5d5,stroke:#b03030,color:#1f2d3d
+    classDef other fill:#eef2f7,stroke:#44546a,color:#1f2d3d
+    classDef tech fill:#ffffff,stroke:#888888,stroke-dasharray: 5 5,color:#1f2d3d

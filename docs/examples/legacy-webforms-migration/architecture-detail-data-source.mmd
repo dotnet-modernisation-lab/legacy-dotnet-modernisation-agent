@@ -1,0 +1,9 @@
+flowchart TD
+    subgraph L_Persistence["Persistence"]
+        n0["<b>Customers.json</b><br/>Fixture"]
+        n1["<b>Customers.json</b><br/>Fixture"]
+        n2["<b>dbo.CustomerInfo_SelectById</b><br/>StoredProcedureContract<br/>decisions: D-DATA-CONTRACT"]:::gated
+    end
+    classDef gated fill:#fbd5d5,stroke:#b03030,color:#1f2d3d
+    classDef other fill:#eef2f7,stroke:#44546a,color:#1f2d3d
+    classDef tech fill:#ffffff,stroke:#888888,stroke-dasharray: 5 5,color:#1f2d3d

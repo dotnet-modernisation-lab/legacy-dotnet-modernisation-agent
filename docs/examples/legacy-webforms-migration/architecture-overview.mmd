@@ -1,0 +1,26 @@
+flowchart LR
+    u0(("<b>Other callers?</b><br/>Field-level rules<br/>Custom identity<br/>No authentication configured<br/>Shared-secret trust<br/><i>not visible in the repository</i>")):::person
+    u0 -.-> a2
+    u1(("<b>Browser users</b><br/>Field-level rules<br/>Forms sign-in<br/>Sign-in checked in code<br/>Shared-secret trust<br/><i>who and from where: not known</i>")):::person
+    u1 --> a3
+    subgraph Estate["The estate (found in the repository)"]
+        a0["<b>Data source</b><br/>Data source<br/>3 code units, 0 technologies<br/>Size XS, Low confidence<br/>1 decision(s) waiting"]:::small
+        a1["<b>Shared libraries and technologies</b><br/>Shared<br/>1 code units, 10 technologies<br/>Size M, Low confidence<br/>3 decision(s) waiting"]:::medium
+        a2["<b>WCF service (LegacyDataServiceHost)</b><br/>WCF service<br/>10 code units, 2 technologies<br/>Size L, Low confidence<br/>5 decision(s) waiting"]:::large
+        a3["<b>Website (LegacyWebFormsSample)</b><br/>Website<br/>12 code units, 6 technologies<br/>Size L, Low confidence<br/>6 decision(s) waiting"]:::large
+        a4["<b>Not placed in any unit</b><br/>Not placed<br/>0 code units, 2 technologies<br/>Size XS, Low confidence<br/>1 decision(s) waiting"]:::notplaced
+    end
+    a2 -->|reads and writes data| a0
+    a2 -->|uses shared code| a1
+    a3 -->|uses shared code| a1
+    a3 -->|WCF call| a2
+    e0[("External web services")]:::external
+    a3 -.-> e0
+    e1[("File shares or local files")]:::external
+    a2 -.-> e1
+    classDef small fill:#d9f2e3,stroke:#2e7d4f,color:#1f2d3d
+    classDef medium fill:#fff1c9,stroke:#b8860b,color:#1f2d3d
+    classDef large fill:#fbd5d5,stroke:#b03030,color:#1f2d3d
+    classDef notplaced fill:#ffffff,stroke:#888888,stroke-dasharray: 5 5,color:#1f2d3d
+    classDef person fill:#e6eef8,stroke:#3b6ea5,color:#1f2d3d
+    classDef external fill:#ffffff,stroke:#8a96a6,stroke-dasharray: 5 5,color:#1f2d3d

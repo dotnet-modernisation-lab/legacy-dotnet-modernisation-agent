@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1472" height="1118" viewBox="0 0 1472 1118" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs>
+<linearGradient id="page" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fb"/><stop offset="1" stop-color="#e9eef6"/></linearGradient>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1f2d3d" flood-opacity="0.16"/></filter>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f7089"/></marker>
+<marker id="arrowUser" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#3b6ea5"/></marker>
+</defs>
+<rect width="1472" height="1118" fill="url(#page)"/>
+<text x="40" y="40" font-size="26" font-weight="700" fill="#1f2d3d">Architecture overview</text>
+<text x="40" y="64" font-size="13" font-weight="600" fill="#44546a">legacy-webforms-migration  &#183;  commit b1dcc50f</text>
+<rect x="306" y="88" width="848" height="678" rx="20" fill="#ffffff" fill-opacity="0.55" stroke="#7d93b2" stroke-width="2" stroke-dasharray="9 6"/>
+<text x="326" y="112" font-size="10" font-weight="700" fill="#52688a" letter-spacing="1.3">THE ESTATE (FOUND IN THE REPOSITORY)</text>
+<rect x="40" y="88" width="220" height="678" rx="20" fill="none" stroke="#b7c2d3" stroke-width="1.6" stroke-dasharray="5 5"/>
+<text x="60" y="112" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.3">PEOPLE AND CALLERS</text>
+<rect x="1200" y="88" width="232" height="678" rx="20" fill="none" stroke="#b7c2d3" stroke-width="1.6" stroke-dasharray="5 5"/>
+<text x="1220" y="112" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.3">OUTSIDE THE ESTATE</text>
+<path d="M 644 508 C 644 549, 499 549, 499 590" stroke="#5f7089" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M 754 508 C 754 549, 923 549, 923 590" stroke="#5f7089" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M 864 205 C 1108 205, 1108 665, 1067 665" stroke="#5f7089" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M 754 278 C 754 319, 723 319, 723 360" stroke="#5f7089" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<circle cx="76" cy="143" r="8" fill="#3b6ea5" stroke="#3b6ea5" stroke-width="1.8"/>
+<path d="M 62 168 Q 62 153 76 153 Q 90 153 90 168 z" fill="#3b6ea5" stroke="#3b6ea5" stroke-width="1.8"/>
+<text x="102" y="150" font-size="13" font-weight="700" fill="#1f2d3d">Browser users</text>
+<rect x="54" y="178" width="125" height="22" rx="11" fill="#e6eef8"/>
+<text x="116" y="193" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Field-level rules</text>
+<rect x="54" y="205" width="99" height="22" rx="11" fill="#e6eef8"/>
+<text x="103" y="220" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Forms sign-in</text>
+<rect x="54" y="232" width="162" height="22" rx="11" fill="#e6eef8"/>
+<text x="135" y="247" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Sign-in checked in code</text>
+<rect x="54" y="259" width="137" height="22" rx="11" fill="#e6eef8"/>
+<text x="122" y="274" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Shared-secret trust</text>
+<rect x="54" y="286" width="200" height="22" rx="11" fill="#fff7e0" stroke="#8a5a08" stroke-width="1.1" stroke-dasharray="3 3"/>
+<text x="154" y="301" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Who and from where: not known</text>
+<path d="M 260 224 C 306 224, 494 205, 531 205" stroke="#3b6ea5" stroke-width="2" fill="none" marker-end="url(#arrowUser)"/>
+<circle cx="76" cy="354" r="8" fill="none" stroke="#8a96a6" stroke-width="1.8" stroke-dasharray="3 3"/>
+<path d="M 62 379 Q 62 364 76 364 Q 90 364 90 379 z" fill="none" stroke="#8a96a6" stroke-width="1.8" stroke-dasharray="3 3"/>
+<text x="102" y="361" font-size="13" font-weight="700" fill="#6b7a8d">Other callers?</text>
+<rect x="54" y="389" width="125" height="22" rx="11" fill="#e6eef8"/>
+<text x="116" y="404" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Field-level rules</text>
+<rect x="54" y="416" width="112" height="22" rx="11" fill="#e6eef8"/>
+<text x="110" y="431" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Custom identity</text>
+<rect x="54" y="443" width="194" height="22" rx="11" fill="#e6eef8"/>
+<text x="151" y="458" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">No authentication configured</text>
+<rect x="54" y="470" width="137" height="22" rx="11" fill="#e6eef8"/>
+<text x="122" y="485" font-size="11" font-weight="700" fill="#2f4f7a" text-anchor="middle">Shared-secret trust</text>
+<rect x="54" y="497" width="200" height="22" rx="11" fill="#fff7e0" stroke="#8a5a08" stroke-width="1.1" stroke-dasharray="3 3"/>
+<text x="154" y="512" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Not visible in the repository</text>
+<path d="M 260 435 C 306 435, 494 435, 531 435" stroke="#3b6ea5" stroke-width="2" fill="none" stroke-dasharray="6 5" marker-end="url(#arrowUser)"/>
+<g filter="url(#shadow)">
+<rect x="334" y="592" width="330" height="146" rx="12" fill="#ffffff" stroke="#d5dde8" stroke-width="1.2"/>
+<path d="M 346 592 A 12 12 0 0 0 334 604 L 334 726 A 12 12 0 0 0 346 738 L 346 738 L 343 738 L 343 592 z" fill="#2e7d4f"/>
+</g>
+<text x="360" y="618" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.2">DATA SOURCE</text>
+<text x="360" y="642" font-size="17" font-weight="700" fill="#1f2d3d">Data source</text>
+<circle cx="624" cy="636" r="24" fill="#d9f2e3" stroke="#2e7d4f" stroke-width="2.2"/>
+<text x="624" y="642" font-size="16" font-weight="800" fill="#2e7d4f" text-anchor="middle">XS</text>
+<text x="360" y="688" font-size="12" font-weight="500" fill="#44546a">3 code units  &#183;  0 technologies  &#183;  1 pt</text>
+<rect x="360" y="700" width="106" height="22" rx="11" fill="#fdecc8"/>
+<text x="413" y="715" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Low confidence</text>
+<rect x="474" y="700" width="131" height="22" rx="11" fill="#fbe1e1"/>
+<text x="539" y="715" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">1 decision waiting</text>
+<g filter="url(#shadow)">
+<rect x="734" y="592" width="330" height="146" rx="12" fill="#ffffff" stroke="#d5dde8" stroke-width="1.2"/>
+<path d="M 746 592 A 12 12 0 0 0 734 604 L 734 726 A 12 12 0 0 0 746 738 L 746 738 L 743 738 L 743 592 z" fill="#b8860b"/>
+</g>
+<text x="760" y="618" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.2">SHARED</text>
+<text x="760" y="642" font-size="17" font-weight="700" fill="#1f2d3d">Shared libraries and</text>
+<text x="760" y="663" font-size="17" font-weight="700" fill="#1f2d3d">technologies</text>
+<circle cx="1024" cy="636" r="24" fill="#fff1c9" stroke="#b8860b" stroke-width="2.2"/>
+<text x="1024" y="642" font-size="16" font-weight="800" fill="#b8860b" text-anchor="middle">M</text>
+<text x="760" y="688" font-size="12" font-weight="500" fill="#44546a">1 code unit  &#183;  10 technologies  &#183;  40 pts</text>
+<rect x="760" y="700" width="106" height="22" rx="11" fill="#fdecc8"/>
+<text x="813" y="715" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Low confidence</text>
+<rect x="874" y="700" width="137" height="22" rx="11" fill="#fbe1e1"/>
+<text x="942" y="715" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">3 decisions waiting</text>
+<g filter="url(#shadow)">
+<rect x="534" y="362" width="330" height="146" rx="12" fill="#ffffff" stroke="#d5dde8" stroke-width="1.2"/>
+<path d="M 546 362 A 12 12 0 0 0 534 374 L 534 496 A 12 12 0 0 0 546 508 L 546 508 L 543 508 L 543 362 z" fill="#b03030"/>
+</g>
+<text x="560" y="388" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.2">WCF SERVICE</text>
+<text x="560" y="412" font-size="17" font-weight="700" fill="#1f2d3d">LegacyDataServiceHost</text>
+<circle cx="824" cy="406" r="24" fill="#fbd5d5" stroke="#b03030" stroke-width="2.2"/>
+<text x="824" y="412" font-size="16" font-weight="800" fill="#b03030" text-anchor="middle">L</text>
+<text x="560" y="458" font-size="12" font-weight="500" fill="#44546a">10 code units  &#183;  2 technologies  &#183;  44 pts</text>
+<rect x="560" y="470" width="106" height="22" rx="11" fill="#fdecc8"/>
+<text x="613" y="485" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Low confidence</text>
+<rect x="674" y="470" width="137" height="22" rx="11" fill="#fbe1e1"/>
+<text x="742" y="485" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">5 decisions waiting</text>
+<g filter="url(#shadow)">
+<rect x="534" y="132" width="330" height="146" rx="12" fill="#ffffff" stroke="#d5dde8" stroke-width="1.2"/>
+<path d="M 546 132 A 12 12 0 0 0 534 144 L 534 266 A 12 12 0 0 0 546 278 L 546 278 L 543 278 L 543 132 z" fill="#b03030"/>
+</g>
+<text x="560" y="158" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.2">WEBSITE</text>
+<text x="560" y="182" font-size="17" font-weight="700" fill="#1f2d3d">LegacyWebFormsSample</text>
+<circle cx="824" cy="176" r="24" fill="#fbd5d5" stroke="#b03030" stroke-width="2.2"/>
+<text x="824" y="182" font-size="16" font-weight="800" fill="#b03030" text-anchor="middle">L</text>
+<text x="560" y="228" font-size="12" font-weight="500" fill="#44546a">12 code units  &#183;  6 technologies  &#183;  93 pts</text>
+<rect x="560" y="240" width="106" height="22" rx="11" fill="#fdecc8"/>
+<text x="613" y="255" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Low confidence</text>
+<rect x="674" y="240" width="137" height="22" rx="11" fill="#fbe1e1"/>
+<text x="742" y="255" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">6 decisions waiting</text>
+<rect x="1214" y="165" width="204" height="76" rx="12" fill="#ffffff" stroke="#8a96a6" stroke-width="1.6" stroke-dasharray="6 5"/>
+<text x="1228" y="193" font-size="13" font-weight="700" fill="#1f2d3d">External web services</text>
+<text x="1228" y="213" font-size="11" font-weight="normal" fill="#6b7a8d">used by LegacyWebFormsSample</text>
+<text x="1228" y="229" font-size="11" font-weight="normal" fill="#6b7a8d">1 place in the code</text>
+<path d="M 864 248 C 1170 248, 1150 203, 1211 203" stroke="#8a96a6" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="1214" y="395" width="204" height="76" rx="12" fill="#ffffff" stroke="#8a96a6" stroke-width="1.6" stroke-dasharray="6 5"/>
+<text x="1228" y="423" font-size="13" font-weight="700" fill="#1f2d3d">File shares or local files</text>
+<text x="1228" y="443" font-size="11" font-weight="normal" fill="#6b7a8d">used by LegacyDataServiceHost</text>
+<text x="1228" y="459" font-size="11" font-weight="normal" fill="#6b7a8d">1 place in the code</text>
+<path d="M 864 478 C 1170 478, 1150 433, 1211 433" stroke="#8a96a6" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="571" y="553" font-size="11" font-weight="600" fill="#44546a" text-anchor="middle" stroke="#eef2f8" stroke-width="4" paint-order="stroke">reads and writes data</text>
+<text x="838" y="553" font-size="11" font-weight="600" fill="#44546a" text-anchor="middle" stroke="#eef2f8" stroke-width="4" paint-order="stroke">uses shared code</text>
+<text x="1047" y="435" font-size="11" font-weight="600" fill="#44546a" text-anchor="middle" stroke="#eef2f8" stroke-width="4" paint-order="stroke">uses shared code</text>
+<text x="738" y="323" font-size="11" font-weight="600" fill="#44546a" text-anchor="middle" stroke="#eef2f8" stroke-width="4" paint-order="stroke">WCF call</text>
+<text x="306" y="810" font-size="12" font-weight="600" fill="#6b7a8d">Counted, but the tool could not tie these to any area</text>
+<g>
+<rect x="306" y="826" width="330" height="146" rx="12" fill="#ffffff" stroke="#9aa5b4" stroke-width="1.6" stroke-dasharray="6 5"/>
+</g>
+<text x="332" y="852" font-size="10" font-weight="700" fill="#6b7a8d" letter-spacing="1.2">NOT PLACED</text>
+<text x="332" y="876" font-size="17" font-weight="700" fill="#1f2d3d">Not placed in any unit</text>
+<circle cx="596" cy="870" r="24" fill="#ffffff" stroke="#9aa5b4" stroke-width="2.2"/>
+<text x="596" y="876" font-size="16" font-weight="800" fill="#44546a" text-anchor="middle">XS</text>
+<text x="332" y="922" font-size="12" font-weight="500" fill="#44546a">0 code units  &#183;  2 technologies  &#183;  3 pts</text>
+<rect x="332" y="934" width="106" height="22" rx="11" fill="#fdecc8"/>
+<text x="385" y="949" font-size="11" font-weight="700" fill="#8a5a08" text-anchor="middle">Low confidence</text>
+<rect x="446" y="934" width="131" height="22" rx="11" fill="#fbe1e1"/>
+<text x="511" y="949" font-size="11" font-weight="700" fill="#9b2c2c" text-anchor="middle">1 decision waiting</text>
+<text x="40" y="1008" font-size="11" font-weight="700" fill="#6b7a8d">SIZE</text>
+<rect x="86" y="997" width="48" height="20" rx="10" fill="#d9f2e3" stroke="#2e7d4f" stroke-width="1.4"/>
+<text x="110" y="1011" font-size="11" font-weight="700" fill="#2e7d4f" text-anchor="middle">XS S</text>
+<rect x="152" y="997" width="24" height="20" rx="10" fill="#fff1c9" stroke="#b8860b" stroke-width="1.4"/>
+<text x="164" y="1011" font-size="11" font-weight="700" fill="#b8860b" text-anchor="middle">M</text>
+<rect x="198" y="997" width="48" height="20" rx="10" fill="#fbd5d5" stroke="#b03030" stroke-width="1.4"/>
+<text x="222" y="1011" font-size="11" font-weight="700" fill="#b03030" text-anchor="middle">L XL</text>
+<text x="270" y="1008" font-size="12" font-weight="normal" fill="#6b7a8d">Relative effort, not days. Low confidence: the size rests on unassessed technology or on decisions not yet made. No overall estate size is given.</text>
+<text x="40" y="1034" font-size="12" font-weight="normal" fill="#6b7a8d">People and callers are deduced from what each project is (a website has browser users). Who they are and where they connect from cannot be seen in a repository.</text>
+<text x="40" y="1054" font-size="12" font-weight="normal" fill="#6b7a8d">Blue tags show what the code and configuration declare about access, not what is enforced at run time.</text>
+</svg>
