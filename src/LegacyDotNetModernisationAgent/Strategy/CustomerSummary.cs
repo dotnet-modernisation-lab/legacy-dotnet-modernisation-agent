@@ -244,7 +244,7 @@ public static class CustomerSummaryBuilder
     {
         DeployableUnits.DataSourceKind => "data source",
         DeployableUnits.SharedKind => "shared code",
-        _ => kind.ToLowerInvariant() switch { "wcf service" => "WCF service", var other => other }
+        _ => kind.StartsWith("WCF", StringComparison.Ordinal) || kind.StartsWith("Windows", StringComparison.Ordinal) ? kind : kind.ToLowerInvariant()
     };
 
     private static string FrameworkName(string framework)
