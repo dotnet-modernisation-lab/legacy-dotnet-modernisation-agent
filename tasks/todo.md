@@ -117,3 +117,10 @@ Sources of behaviour, in order of build:
   - Level 4 (code) is out of scope: the code is the source
   - Rules: every element and relationship cites the fact it came from; nothing is invented to make the picture complete; unknowns are shown as unknowns; output is deterministic; text only, no overall size
   - Open: a views file the user can load into Structurizr without edits; consistent element IDs so a later model of the target architecture can be diffed against it
+
+### Behaviour criteria (implementation-neutral)
+- [x] `behaviour-criteria.md` and a Word section: candidates per capability, mechanisms listed as not required, to-confirm list, decide-first list; flows stay as the current-state description
+- [ ] Confirm criteria from observation: scenario file interpreter and recorded sessions fill in what a caller is shown and how bad input is handled
+- [ ] Model-drafted capability names and plain wording, validated against the facts, approved by a person
+- [ ] Check a migrated system against the criteria (maps criteria ids to the new components; reuses the flow extractor on the target)
+- [ ] Access matrix of roles against capabilities once role names are read from code

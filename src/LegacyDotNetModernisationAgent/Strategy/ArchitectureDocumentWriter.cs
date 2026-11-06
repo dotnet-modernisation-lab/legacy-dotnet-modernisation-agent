@@ -20,7 +20,7 @@ public static class ArchitectureDocumentWriter
     private const string Muted = "5B6770";
     private const string Navy = "1F3A5F";
 
-    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, ComponentMap components, DataTouchMap data, (byte[] Png, int Width, int Height)? diagram)
+    public static void Word(string path, string repository, CustomerSummary summary, EstateContext context, FlowSet flows, ComponentMap components, DataTouchMap data, BehaviourCriteria criteria, (byte[] Png, int Width, int Height)? diagram)
     {
         using var document = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
 
@@ -300,6 +300,52 @@ public static class ArchitectureDocumentWriter
             }
         }
 
+        // ---- What a replacement must keep -----------------------------------------------------------------------
+        body.Append(Mark(CustomerSummaryWriter.Heading("What a replacement must keep, and what to decide first"), "What a replacement must keep, and what to decide first", 1));
+
+        foreach (var note in criteria.Notes.Take(3))
+        {
+            body.Append(CustomerSummaryWriter.Para(note, size: 19, colour: Muted, after: 60));
+        }
+
+        var substantial = criteria.Criteria.Where(criterion => criterion.HasSubstance).ToList();
+
+        if (substantial.Count > 0)
+        {
+            body.Append(CustomerSummaryWriter.Table(
+                ["Capability", "Who and what it needs (declared)", "What it affects", "Still to confirm"],
+                [24, 28, 28, 20],
+                substantial.Take(MaxCriteriaRows).Select(criterion => new[]
+                {
+                    $"{criterion.Capability}\n{criterion.Id}",
+                    ComponentMapWriter.Join(criterion.Given, 3),
+                    criterion.Then.Count == 0 ? "nothing found" : ComponentMapWriter.Join(criterion.Then, 3),
+                    ComponentMapWriter.Join(criterion.ToConfirm, 2)
+                }).ToList()));
+
+            if (substantial.Count > MaxCriteriaRows)
+            {
+                body.Append(CustomerSummaryWriter.Para($"{substantial.Count - MaxCriteriaRows} further criteria are in behaviour-criteria.md, each written as Given / When / Then with its evidence and the mechanisms that are not required.", size: 18, colour: Muted, after: 60, before: 40));
+            }
+        }
+
+        body.Append(CustomerSummaryWriter.Para("Decide before carrying forward", size: 21, bold: true, after: 20, before: 140));
+
+        if (criteria.DecideFirst.Count == 0)
+        {
+            body.Append(CustomerSummaryWriter.Bullet("Nothing was found that needs a decision before it is carried forward."));
+        }
+
+        foreach (var item in criteria.DecideFirst.Take(MaxDecisions))
+        {
+            body.Append(CustomerSummaryWriter.Bullet($"{item.Statement} {item.Why}"));
+        }
+
+        if (criteria.DecideFirst.Count > MaxDecisions)
+        {
+            body.Append(CustomerSummaryWriter.Bullet($"{criteria.DecideFirst.Count - MaxDecisions} further items are in behaviour-criteria.md."));
+        }
+
         // ---- What could not be seen -------------------------------------------------------------------------------
         body.Append(Mark(CustomerSummaryWriter.Heading("What the tool could not follow or see"), "What the tool could not follow or see", 1));
 
@@ -389,6 +435,8 @@ public static class ArchitectureDocumentWriter
     private const int MaxComponentsPerPart = 12;
     private const int MaxDataRows = 25;
     private const int MaxEntryPointRows = 15;
+    private const int MaxCriteriaRows = 20;
+    private const int MaxDecisions = 12;
     private const int MaxStoriesPerPart = 4;
 
     /// <summary>The names of the most connected components of a part, so the parts table says what is inside without counting kinds of code.</summary>

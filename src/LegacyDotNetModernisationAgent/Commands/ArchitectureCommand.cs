@@ -20,6 +20,7 @@ public sealed class ArchitectureCommand
         var summary = CustomerSummaryBuilder.Build(assessment, graph, analysis, input, unitMap, context, flows);
         var components = ComponentMapBuilder.Build(assessment, graph, unitMap);
         var data = DataTouchBuilder.Build(graph, unitMap, components, flows);
+        var criteria = BehaviourCriteriaBuilder.Build(assessment, flows, components, data);
         var svg = ArchitectureDiagram.OverviewSvg(input, context);
 
         Directory.CreateDirectory(artifactsDirectory);
@@ -30,10 +31,12 @@ public sealed class ArchitectureCommand
 
         await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "data-touch.md"), DataTouchWriter.Markdown(data, assessment.RepositoryName).Replace("\r\n", "\n", StringComparison.Ordinal), cancellationToken);
 
+        await File.WriteAllTextAsync(Path.Combine(artifactsDirectory, "behaviour-criteria.md"), BehaviourCriteriaWriter.Markdown(criteria, assessment.RepositoryName).Replace("\r\n", "\n", StringComparison.Ordinal), cancellationToken);
+
         var png = SvgRenderer.ToPng(svg);
 
         await File.WriteAllBytesAsync(Path.Combine(artifactsDirectory, "architecture-overview.png"), png.Png, cancellationToken);
-        ArchitectureDocumentWriter.Word(Path.Combine(artifactsDirectory, "architecture.docx"), assessment.RepositoryName, summary, context, flows, components, data, png);
+        ArchitectureDocumentWriter.Word(Path.Combine(artifactsDirectory, "architecture.docx"), assessment.RepositoryName, summary, context, flows, components, data, criteria, png);
 
         Console.WriteLine($"{assessment.RepositoryName}: architecture document with {summary.Areas.Count} part(s) and {flows.Flows.Count} flow(s)");
         Console.WriteLine($"Wrote architecture.docx, architecture-overview.svg and architecture-overview.png to {artifactsDirectory}");
